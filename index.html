@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AP Psychology Mastery</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #F0F2F5; color: #1F2937; }
+        .bento-item { background: #FFF; border-radius: 24px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); padding: 24px; display: flex; flex-direction: column; justify-content: center; transition: all 0.3s ease; }
+        :fullscreen #main-container { padding: 3rem; background: white; width: 100%; height: 100%; }
+        @keyframes fade-in-up { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in-up { animation: fade-in-up 0.4s ease-out forwards; }
+    </style>
+</head>
+<body class="selection:bg-indigo-100 selection:text-indigo-900">
+    <div id="root"></div>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/framer-motion@11/dist/framer-motion.js"></script>
+    <script type="text/babel">
+        const { useState, useEffect, useRef, useMemo } = React;
+        const { motion, AnimatePresence } = window.Motion;
+
+        const RAW_DATA = {
+            "Unit 0: Science Practices": [
+                // Practice 1: Apply psychological perspectives, theorists, concepts and research findings
+                { term: "Cultural norms", cn: "文化规范", en_def: "Rules for accepted and expected behavior in a culture.", cn_def: "一个文化中公认的、被期望的行为准则。", hint: "‘社会潜规则’。比如在某些国家打招呼要亲吻面颊。" },
+                { term: "Confirmation bias", cn: "确认偏误", en_def: "Tendency to search for information that supports our preconceptions.", cn_def: "倾向于寻找支持我们预断的信息。", hint: "你只看你想看的。算法总是让你看到你‘本来就同意’的内容。" },
+                { term: "Hindsight bias", cn: "事后聪明偏见", en_def: "Tendency to believe, after learning an outcome, that one would have foreseen it.", cn_def: "得知结果后认为自己早就能预见到的倾向。", hint: "‘事后诸葛亮’。考试结果出来拍大腿：我就知道选C！" },
+                { term: "Overconfidence", cn: "过度自信", en_def: "Tendency to be more confident than correct.", cn_def: "倾向于高估自己判断的准确性。", hint: "‘谜之自信’。觉得自己能10分钟写完作业，结果写了一小时。" },
+
+                // Practice 2: Evaluate qualitative and quantitative research methods and study design
+                { term: "Experiment", cn: "实验法", en_def: "A research method where variables are manipulated to determine cause and effect.", cn_def: "通过操纵变量来确定因果关系的研究方法。", hint: "‘因果之王’。唯一能确定‘谁导致了谁’的方法。" },
+                { term: "Random assignment", cn: "随机分配", en_def: "Assigning participants to groups by chance to minimize preexisting differences.", cn_def: "通过随机方式将参与者分配到实验组和对照组以减少干扰因素。", hint: "‘消除不公’。像扣排队洗牌一样分发人员，保证两组人起步水平一样。" },
+                { term: "Case study (non-experimental)", cn: "个案研究", en_def: "In-depth study of one individual or small group.", cn_def: "对一个人或极少数群体进行深入研究的非实验技术。", hint: "‘显微镜下的样本’。虽然不能推广到大众，但能发现极其罕见的现象。" },
+                { term: "Correlation (non-experimental)", cn: "相关研究", en_def: "Measure of the extent to which two variables change together.", cn_def: "测量两个变量之间变化的一致程度。", hint: "‘如影随形’。身高和体重通常一起变，但身高不‘导致’体重（不是因果）。" },
+                { term: "Meta-analysis (non-experimental)", cn: "元分析", en_def: "Statistical procedure for combining results from many studies.", cn_def: "汇总并分析许多研究结果的统计程序。", hint: "‘大数据的总结汇报’。把几十个关于同一主题的小实验合在一起看大趋势。" },
+
+                { term: "Hypothesis", cn: "假设", en_def: "A testable prediction, often implied by a theory.", cn_def: "一个可验证的预测，通常由理论推导而来。", hint: "‘我猜...’。科学实验的出发点。" },
+                { term: "Falsifiable", cn: "可证伪性", en_def: "The possibility that an idea can be proven wrong.", cn_def: "一个观点存在被证明是错误的可能性。", hint: "科学的标志。如果一个说法怎么解释都对，那它就不是科学。" },
+                { term: "Operational definitions", cn: "操作性定义", en_def: "A carefully worded statement of the exact procedures used in a research study.", cn_def: "定义研究变量所使用的明确、可复刻的程序说明。", hint: "‘具体的衡量尺子’。比如把‘幸福’定义为‘一天笑几次’。" },
+                { term: "Independent variable (IV)", cn: "自变量", en_def: "The variable that is manipulated by the researcher.", cn_def: "由研究者操纵的实验变量。", hint: "‘原因/改变因素’。比如实验里给不给喝咖啡，‘喝咖啡’就是自变量。" },
+                { term: "Dependent variable (DV)", cn: "因变量", en_def: "The variable that is measured; it may change in response to manipulations of the IV.", cn_def: "被测量的变量，它随自变量的变化而变化。", hint: "‘结果/表现’。喝了咖啡后的‘考试成绩’就是因变量。" },
+                { term: "Confounding variables", cn: "混淆变量/干扰变量", en_def: "A factor other than the IV that might produce an effect in an experiment.", cn_def: "除自变量外，可能对实验结果产生影响的其他因素。", hint: "‘捣乱变量’。比如测咖啡对考试的影响，结果发现有人昨晚熬夜了，‘熬夜’就是混淆变量。" },
+                { term: "Sample", cn: "样本", en_def: "A relatively small group of people involved in a study.", cn_def: "参与研究的一小部分人。", hint: "大海里的‘一勺水’。" },
+                { term: "Population", cn: "总体", en_def: "The entire group from which samples may be drawn.", cn_def: "样本所属的、你想要了解的整个群体。", hint: "比如你想研究全国的中学生，‘全国中学生’就是总体。" },
+                { term: "Representative sample", cn: "代表性样本", en_def: "A sample that reflects the characteristics of the population.", cn_def: "能真实反映总体特征的样本。", hint: "不能只在这一所学校抽样，而要涵盖各个地区和类型的学生。" },
+                { term: "Random sampling", cn: "随机抽样", en_def: "A sample that fairly represents a population because each member has an equal chance of inclusion.", cn_def: "每个人都有相等机会被抽中的抽样方法。", hint: "‘公平摇号’。为了选出有代表性的样本。" },
+                { term: "Convenience sampling", cn: "方便抽样", en_def: "Choosing a sample because they are easy to access.", cn_def: "因为方便（如就在身边）而选择样本的方法。", hint: "在大街上随便拉个人填问卷。虽然省事，但不一定有代表性。" },
+                { term: "Sampling bias", cn: "抽样偏差", en_def: "A flawed sampling process that produces an unrepresentative sample.", cn_def: "导致样本无法代表总体的有缺陷的抽样过程。", hint: "比如你想研究国民运动习惯，结果只在健身房门口发问卷。" },
+                { term: "Generalizability", cn: "概括性/普适性", en_def: "The extent to which findings can be applied to the larger population.", cn_def: "实验结论能否推广到更广泛人群的程度。", hint: "如果只研究了大学生，那么结论可能不适用于中老年人。" },
+                { term: "Experimental group", cn: "实验组", en_def: "The group exposed to the treatment (IV).", cn_def: "接受实验处理（自变量）的那组人。", hint: "‘被灌咖啡的那组’。" },
+                { term: "Control group", cn: "控制组/对照组", en_def: "The group not exposed to the treatment; used for comparison.", cn_def: "不接受处理、作为比较基准的那组人。", hint: "‘喝白开水的那组’。" },
+                { term: "Placebo", cn: "安慰剂", en_def: "An inert substance given to the control group instead of the actual drug.", cn_def: "一种没有实际疗效的、用来欺骗大脑的‘假药’。", hint: "‘面粉丸子’。" },
+                { term: "Single-blind", cn: "单盲实验", en_def: "Participants do not know whether they are in the experimental or control group.", cn_def: "参与者不知道自己在哪一组。", hint: "防止‘心理作用’干扰结果。" },
+                { term: "Double-blind", cn: "双盲实验", en_def: "Neither the participants nor the researchers know who is in which group.", cn_def: "参与者和研究员都不知道分组情况。", hint: "防止参与者和实验者的偏见同时干扰结果。" },
+                { term: "Social desirability bias", cn: "社会赞许性偏差", en_def: "Tendency of participants to answer in a way that will be viewed favorably by others.", cn_def: "参与者倾向于给出‘别人觉得正确’或‘高尚’的答案。", hint: "‘面子问题’。比如问你一天看多久书，你可能会多报一点。" },
+                { term: "Qualitative (structured interviews)", cn: "质性研究 (结构化访谈)", en_def: "Research focusing on descriptive data rather than numbers.", cn_def: "侧重于描述性文字、深层含义而非数字的研究。", hint: "‘听故事’。了解人的真实感受和想法。" },
+                { term: "Quantitative (Likert scales)", cn: "量化研究 (利克特量表)", en_def: "Research focusing on numerical data.", cn_def: "侧重于数字、数据和统计的研究。", hint: "‘打分’。1-5分代表你有多同意。" },
+                { term: "Peer review", cn: "同行评审", en_def: "Evaluation of scientific work by others in the same field.", cn_def: "由同领域的其他专家对科学论文进行审核的过程。", hint: "‘专家质检’。" },
+                { term: "Replication", cn: "复刻/可重复性", en_def: "Repeating the essence of a research study to see whether the basic finding extends to other participants and circumstances.", cn_def: "重复进行同一研究以验证其结论是否稳定的过程。", hint: "科学的生命力。如果别人做不出来你那个结果，那就是‘玄学’。" },
+
+                { term: "Directionality problem (correlation)", cn: "方向性问题", en_def: "Unknown if A causes B or B causes A in a correlation.", cn_def: "相关中无法确定是A影响了B，还是B影响了A。", hint: "‘鸡生蛋还是蛋生鸡’。比如自尊和成绩相关，是好成绩提高了自尊，还是高自尊带来了好成绩？" },
+                { term: "Third variable problem (correlation)", cn: "第三变量问题", en_def: "Unseen factor (C) might cause both A and B in a correlation.", cn_def: "可能存在一个看不见的因素C，同时导致了A和B的变化。", hint: "比如吃雪糕和溺水事故成正相关，但其实是‘天热’（变量C）导致了这两者都变多。" },
+                { term: "Survey technique", cn: "调查法", en_def: "A technique for ascertaining the self-reported attitudes or behaviors of a particular group.", cn_def: "通过问卷等方式获取特定人群自我报告的态度或行为的技术。", hint: "‘发传单问卷’。容易受到用词诱导。" },
+                { term: "Self-report bias", cn: "自我报告偏差", en_def: "When participants provide inaccurate info on surveys.", cn_def: "参与者在调查中提供不准确信息的倾向。", hint: "可能由于记忆模糊或社会认同压力。" },
+
+                { term: "Institutional review (IRB)", cn: "机构审查委员会", en_def: "A committee that reviews research proposals for ethical violations.", cn_def: "审查研究方案是否符合伦理规范的小组。", hint: "‘伦理监察员’。在动工前必须通过他们的点头。" },
+                { term: "Informed consent", cn: "知情同意", en_def: "Participants must be told enough to enable them to choose whether they wish to participate.", cn_def: "参与者在了解研究大概内容后，自愿签署同意书。", hint: "‘丑话说在前头’。" },
+                { term: "Informed assent", cn: "知情赞同", en_def: "The agreement of someone not able to give legal consent (e.g., a minor).", cn_def: "不能签署法律同意书的人（如未成年人）表达出的口头或书面同意。", hint: "虽然家长签了，但也要问问小孩子愿不愿意。" },
+                { term: "Protection from harm", cn: "免受伤害", en_def: "Researchers must ensure participants are not at risk of physical or psychological distress.", cn_def: "研究者必须确保参与者不承受过度的身体或心理压力。", hint: "安全第一。" },
+                { term: "Confidentiality", cn: "保密性", en_def: "Keeping participant information private.", cn_def: "保护参与者个人隐私不外泄。", hint: "不能把你填的问卷告诉别人。" },
+                { term: "Deception", cn: "欺骗", en_def: "Misleading participants about the true purpose of a study.", cn_def: "在告知真相会干扰实验时，对参与者隐瞒真实目的。", hint: "‘善意的谎言’。但事后必须解释清楚（debriefing）。" },
+                { term: "Research confederates", cn: "实验助手/共谋者", en_def: "People Who seem like participants but are actually part of the research team.", cn_def: "看起来像普通参与者，实际上是演员、是研究团队一员的人。", hint: "‘托儿’。比如阿希实验里故意报错线段的人。" },
+                { term: "Debriefing", cn: "事后说明", en_def: "The post-experimental explanation of a study, including its purpose and any deceptions, to its participants.", cn_def: "实验结束后，向参与者说明其真实目的（及任何欺骗行为）的过程。", hint: "‘坦白交代’。" },
+
+                // Practice 3: Evaluate representations of psychological concepts in quantitative and qualitative research
+                { term: "Mean (Unit 0)", cn: "平均数", en_def: "Arithmetic average.", cn_def: "所有数据相加除以个数。", hint: "中心趋势之一。容易被极端值‘带节奏’。" },
+                { term: "Median (Unit 0)", cn: "中位数", en_def: "Middle score.", cn_def: "按大小排序后最中间的那个数。", hint: "中心趋势之一。比较稳健，不受极端值影响。" },
+                { term: "Mode", cn: "众数", en_def: "The most frequently occurring score(s).", cn_def: "出现频率最高的数据。", hint: "中心趋势之一。" },
+                { term: "Range", cn: "全距/极差", en_def: "The difference between the highest and lowest scores.", cn_def: "最高分与最低分之差。", hint: "最简单的变异性测量。" },
+                { term: "Normal curve", cn: "正态分布曲线", en_def: "A symmetrical, bell-shaped curve describing the distribution of many types of data.", cn_def: "对称的钟形曲线。描述了智力等大多数人类特性的分布。", hint: "‘钟形图’。大部分人都在中间，两头极少。" },
+                { term: "Variation", cn: "变异性", en_def: "How spread out or clustered data is.", cn_def: "数据分散或集中的程度。", hint: "描述数据的分布广度。" },
+                { term: "Skewness", cn: "偏态", en_def: "Lack of symmetry in the distribution curve.", cn_def: "分布曲线不对称的现象。", hint: "‘数据歪了’。长尾巴在右边叫正偏态，在左边叫负偏态。" },
+                { term: "Bimodal distribution", cn: "双峰分布", en_def: "A distribution with two clear peaks.", cn_def: "有两个频率高峰的分布情况。", hint: "‘双峰骆驼’。说明数据里可能包含两个完全不同的群体。" },
+                { term: "Standard deviation (Unit 0)", cn: "标准差", en_def: "How much scores vary around the mean.", cn_def: "分数围绕平均数波动的平均程度。", hint: "最有代表性的离散趋势指标。" },
+                { term: "Percentile rank", cn: "百分等级", en_def: "The percentage of scores that fall below a given score.", cn_def: "低于某个分数的人数占总人数的百分比。", hint: "‘你在千军万马中的排位’。99th percentile意味着你超过了99%的人。" },
+                { term: "Regression toward the mean", cn: "均值回归", en_def: "Tendency for extreme scores to fall back toward the average.", cn_def: "极端的分数或表现随时间回到平庸/平均水平的倾向。", hint: "考了满分的人，下次大概率会稍微退步一点点。" },
+
+                { term: "Scatterplot", cn: "散点图", en_def: "A graphed cluster of dots, representing the values of two variables.", cn_def: "展示两个变量关联情况的点群图。", hint: "‘星星点点’。点的趋势可以看出相关的强弱和方向。" },
+                { term: "Correlation coefficient", cn: "相关系数 (r)", en_def: "Statistical index of relationship between two things (-1 to +1).", cn_def: "衡量两者关系强度和方向的统计指标。", hint: "数值越接近1，越相关；正值代表同向变化，负值代表反向变化。" },
+                { term: "Effect size", cn: "效应量", en_def: "Magnitude of the difference between groups.", cn_def: "实验处理产生的实际影响的大小、强度的指标。", hint: "不仅看‘有没有用’，还看‘有多大用’。" },
+                { term: "Statistical significance (Unit 0)", cn: "统计显著性", en_def: "Likelihood that a result occurred by chance (p < .05).", cn_def: "所得结果仅仅因为偶然发生的可能性极低。", hint: "科学的‘可信度’。p<0.05代表你中奖（结果为假）的概率低于5%。" }
+            ],
+            "Unit 1: Biological Bases": [
+                // Topic 1.1: Interaction of Heredity and Environment
+                { term: "Evolutionary Perspective", cn: "进化心理学视角", en_def: "The study of the evolution of behavior and the mind, using principles of natural selection.", cn_def: "利用自然选择原理研究行为和心理进化的学科。", hint: "‘适应环境’。为什么我们害怕蛇？因为祖先里怕蛇的更容易活下来传宗接代。" },
+                { term: "Natural Selection", cn: "自然选择", en_def: "The principle that inherited traits that better enable an organism to survive and reproduce will most likely be passed on.", cn_def: "指那些能更好地使生物生存和繁衍的遗传特征最有可能被传递下去的原理。", hint: "‘适者生存’。大自然像个筛子，优良的基因被留了下来。" },
+                { term: "Eugenics", cn: "优生学", en_def: "The study of how to arrange reproduction within a human population to increase the occurrence of heritable characteristics regarded as desirable.", cn_def: "研究如何通过控制人类繁衍来增加‘优良’遗传特性的学科。", hint: "‘基因改良计划’。虽然历史上很有争议，但它试图‘人为干预’人类的进化。" },
+                { term: "Twin Studies", cn: "双生子研究", en_def: "Research that compares identical and fraternal twins to determine the relative influence of heredity and environment.", cn_def: "通过比较同卵和异卵双胞胎来确定遗传和环境相对影响的研究。", hint: "‘遗传 vs 环境’的最佳实验。如果失散多年的同卵双胞胎性格极像，说明遗传力量巨大。" },
+
+                // Topic 1.2: Overview of the Nervous System
+                { term: "Central Nervous System (CNS)", cn: "中枢神经系统", en_def: "The brain and spinal cord.", cn_def: "大脑和脊髓。", hint: "大脑的‘司令部’。身体所有的核心决策和反射弧都在这里处理。" },
+                { term: "Peripheral Nervous System (PNS)", cn: "外周神经系统", en_def: "The sensory and motor neurons that connect the CNS to the rest of the body.", cn_def: "连接中枢神经系统与身体其他部分的感官和运动神经元。", hint: "身体的‘情报网’。负责把外部信息传进来，把中央指令传出去。" },
+                { term: "Autonomic Nervous System", cn: "自主神经系统", en_def: "The part of the PNS that controls the glands and muscles of the internal organs.", cn_def: "外周神经系统中控制内脏腺体和肌肉的部分。", hint: "‘自动档’。你不需要操心心跳和消化，它会帮你搞定。" },
+                { term: "Somatic Nervous System", cn: "躯体神经系统", en_def: "The division of the peripheral nervous system that controls the body's skeletal muscles.", cn_def: "外周神经系统中控制骨骼肌运动的部分。", hint: "‘手动档’。当你想举手或走路时，就是这个系统在工作。" },
+                { term: "Sympathetic Nervous System", cn: "交感神经系统", en_def: "The division of the autonomic nervous system that arouses the body, mobilizing its energy.", cn_def: "自主神经系统中负责唤醒身体的部分，在压力情境下动员能量。", hint: "大脑的‘油门’。遇到危险时让你心跳加速、瞳孔放大，准备‘战斗或逃跑’。" },
+                { term: "Parasympathetic Nervous System", cn: "副交感神经系统", en_def: "The division of the autonomic nervous system that calms the body, conserving its energy.", cn_def: "自主神经系统中负责使身体平静并保存能量的部分。", hint: "大脑的‘刹车’。当危险过去，它让你安静下来，进入‘休息和消化’模式。" },
+
+                // Topic 1.3: The Neuron and Neural Firing
+                { term: "Neuron", cn: "神经元", en_def: "The basic building block of the nervous system.", cn_def: "神经系统的基本构建单元。", hint: "大脑的‘砖块’。它是负责接收、处理和传递信息的信息细胞。" },
+                { term: "Glial Cells", cn: "神经胶质细胞", en_def: "Cells in the nervous system that support, nourish, and protect neurons.", cn_def: "神经系统中支持、营养和保护神经元的细胞。", hint: "神经元的‘保姆和私人保镖’。它们不直接传递信息，但没有它们神经元活不下去。" },
+                { term: "Reflex Arc", cn: "反射弧", en_def: "The nerve pathway involved in a reflex activity.", cn_def: "参与反射活动的神经通路。", hint: "‘身体的急诊室’。手碰到热锅立刻缩回来，信息只到脊髓没到大脑就做出了决定。" },
+                { term: "Sensory Neurons", cn: "感觉神经元", en_def: "Neurons that carry incoming info from the sensory receptors to the brain/spinal cord.", cn_def: "将感官受器的信息传向中枢神经系统的神经元。", hint: "‘侦察兵’。把皮肤摸到的、眼睛看到的传回中央。" },
+                { term: "Motor Neurons", cn: "运动神经元", en_def: "Neurons that carry outgoing info from the brain/spinal cord to the muscles/glands.", cn_def: "将中枢神经系统的指令传向肌肉或腺体的神经元。", hint: "‘传令兵’。把大脑‘举手’的命令带给肌肉。" },
+                { term: "Interneurons", cn: "中间神经元", en_def: "Neurons within the brain and spinal cord that communicate internally.", cn_def: "中枢神经系统内部负责内部沟通的神经元。", hint: "‘中间商’。它们在大脑和脊髓里负责把感觉和运动信号连接起来。" },
+                { term: "All-or-Nothing Principle", cn: "全或无原则", en_def: "A neuron's reaction of either firing or not firing.", cn_def: "神经元要么完全发射，要么不发射的反应方式。", hint: "‘开枪’。扣动扳机，子弹要么打出去，要么不发，没有‘半颗子弹’。" },
+                { term: "Action Potential", cn: "动作电位", en_def: "A neural impulse; a brief electrical charge that travels down an axon.", cn_def: "神经冲动；沿轴突向下传播的短暂电荷变化。", hint: "大脑的‘闪电’。这是神经元‘说话’的方式，一次快速的放电过程。" },
+                { term: "Depolarization", cn: "去极化", en_def: "The process during the action potential when sodium is rushing into the cell causing the interior to become more positive.", cn_def: "动作电位期间，钠离子涌入细胞导致内部电位变正的过程。", hint: "‘大门洞开’。正离子冲进去，打破了平静，点燃了神经冲动。" },
+                { term: "Refractory Period", cn: "不应期", en_def: "A period of inactivity after a neuron has fired.", cn_def: "神经元发射后的短暂休整期。", hint: "‘冷却时间’。技能刚放完，需要一点时间回蓝才能放下一个。" },
+                { term: "Resting Potential", cn: "静息电位", en_def: "The positive-outside/negative-inside state of the axon membrane.", cn_def: "轴突膜外正内负的待机状态。", hint: "‘蓄势待发’。像拉满的弓，虽然没动，但充满了潜能。" },
+                { term: "Reuptake", cn: "再摄取", en_def: "A neurotransmitter's reabsorption by the sending neuron.", cn_def: "发送端神经元对神经递质的重新吸收过程。", hint: "资源的‘循环利用’。为了不浪费，突触前膜会把还没用掉的信使重新吸回去。" },
+                { term: "Threshold", cn: "阈值", en_def: "The level of stimulation required to trigger a neural impulse.", cn_def: "触法神经冲动所需的最低刺激水平。", hint: "大脑的‘起跑线’。刺激必须达到这个点，神经元才会决定‘发射’。" },
+                { term: "Multiple Sclerosis", cn: "多发性硬化症", en_def: "A disease in which the immune system eats away at the protective covering of nerves.", cn_def: "一种免疫系统攻击神经保护层（髓鞘）的疾病。", hint: "‘线路漏电’。髓鞘受损，导致神经信号传输混乱或中断。" },
+                { term: "Myasthenia Gravis", cn: "重症肌无力", en_def: "A chronic autoimmune disease that affects the neuromuscular junction.", cn_def: "一种影响神经肌肉接头的慢性自身免疫性疾病。", hint: "‘信号接收失败’。神经能发命令，但肌肉接不住，导致严重的肌肉无力。" },
+                { term: "Excitatory Neurotransmitter", cn: "兴奋性神经递质", en_def: "Neurotransmitters that increase the likelihood that a neuron will fire.", cn_def: "增加神经元发射可能性的神经递质。", hint: "大脑的‘加油站’。它们促使下一个神经元变得兴奋起来。" },
+                { term: "Inhibitory Neurotransmitter", cn: "抑制性神经递质", en_def: "Neurotransmitters that decrease the likelihood that a neuron will fire.", cn_def: "降低神经元发射可能性的神经递质。", hint: "大脑的‘灭火器’。它们让神经元‘冷静’，不要发射冲动。" },
+                { term: "Dopamine", cn: "多巴胺", en_def: "Influences movement, learning, attention, and emotion.", cn_def: "影响运动、学习、注意力和情绪。", hint: "‘奖励因子’。与快乐、成瘾、帕金森症和精神分裂症有关。" },
+                { term: "Serotonin", cn: "血清素", en_def: "Affects mood, hunger, sleep, and arousal.", cn_def: "影响情绪、饥饿、睡眠和觉醒。", hint: "‘情绪稳定剂’。如果它不够，你可能会感到抑郁。" },
+                { term: "Norepinephrine", cn: "去甲肾上腺素", en_def: "Helps control alertness and arousal.", cn_def: "帮助控制警觉和觉醒。", hint: "‘战斗信使’。让你在紧急情况下保持高度清醒。" },
+                { term: "Glutamate", cn: "谷氨酸", en_def: "A major excitatory neurotransmitter; involved in memory.", cn_def: "主要的兴奋性神经递质；涉及记忆。", hint: "‘最强油门’。大脑里最丰富的兴奋性递质。" },
+                { term: "GABA", cn: "γ-氨基丁酸", en_def: "A major inhibitory neurotransmitter.", cn_def: "主要的抑制性神经递质。", hint: "‘最强刹车’。帮助大脑抑制过度兴奋，如果不足可能导致抽搐或失眠。" },
+                { term: "Substance P", cn: "P物质", en_def: "A neurotransmitter involved in pain perception and immune response.", cn_def: "涉及疼痛感知和免疫反应的神经递质。", hint: "‘痛觉快递员’。它负责把疼痛的信号传给大脑。" },
+                { term: "Endorphins", cn: "内啡肽", en_def: "Natural, opiate-like neurotransmitters linked to pain control and pleasure.", cn_def: "天然的止痛和产生快乐的递质。", hint: "大脑里的‘止疼药’。" },
+                { term: "Acetylcholine", cn: "乙酰胆碱", en_def: "Enables muscle action, learning, and memory.", cn_def: "使肌肉活动、学习和记忆成为可能。", hint: "‘肌肉开关’。如果它被阻断（如肉毒杆菌），人就会瘫痪。" },
+                { term: "Agonist", cn: "激动剂/拮抗剂", en_def: "A molecule that stimulates a response by binding to a receptor.", cn_def: "通过结合受体来激发反应的分子。", hint: "‘伪装的钥匙’。模仿神经递质把锁打开。" },
+                { term: "Antagonist", cn: "拮抗剂", en_def: "A molecule that inhibits or blocks a response.", cn_def: "抑制或阻断反应的分子。", hint: "‘堵锁眼的棍子’。占着位置但不干活。" },
+                { term: "Reuptake Inhibitor", cn: "再摄取抑制剂", en_def: "A drug that blocks the reabsorption of neurotransmitters.", cn_def: "阻断神经递质重新吸收的药物。", hint: "‘延长保质期’。让信使在外面待得更久，发挥更大作用，如SSRIs。" },
+                { term: "Endocrine System", cn: "内分泌系统", en_def: "The body's 'slow' chemical communication system via hormones.", cn_def: "通过激素进行的慢速化学通信系统。", hint: "‘邮寄信件’。虽然慢，但持久且遍布全身。" },
+                { term: "Hormones", cn: "激素/荷尔蒙", en_def: "Chemical messengers traveling through the bloodstream.", cn_def: "通过血液传播的化学信使。", hint: "血液里的快递。" },
+                { term: "Psychoactive Drugs", cn: "精神药物", en_def: "Chemical substances that alter perception and moods.", cn_def: "改变感知和情绪的化学物质。", hint: "‘大脑滤镜’。改变神经递质的工作方式。" },
+                { term: "Substance Use Disorder", cn: "物质滥用障碍", en_def: "Continued substance craving despite significant life disruption.", cn_def: "尽管生活受到严重干扰，仍持续渴望使用某种物质。", hint: "‘成瘾带来的失控’。" },
+                { term: "Depressants", cn: "抑制剂", en_def: "Drugs that reduce neural activity and slow body functions.", cn_def: "降低神经活动并减慢身体功能的药物。", hint: "‘大脑的减速带’。如酒精。" },
+                { term: "Tolerance", cn: "耐受性", en_def: "Diminishing effect with regular use of the same dose of a drug.", cn_def: "经常使用同等剂量的药物后，效果逐渐减弱的现象。", hint: "‘胃口变大了’。下次得用更多才有效。" },
+                { term: "Addiction", cn: "成瘾", en_def: "Compulsive craving of drugs or certain behaviors despite adverse consequences.", cn_def: "尽管有不良后果，仍强迫性地渴望药物或某些行为。", hint: "‘停不下来的渴求’。" },
+                { term: "Withdrawal", cn: "戒断反应", en_def: "Discomfort and distress following discontinuing an addictive drug.", cn_def: "停用成瘾药物后出现的痛苦和不适。", hint: "‘戒瘾后的反弹’。" },
+                { term: "Barbiturates", cn: "巴比妥类药物", en_def: "Drugs that depress CNS activity, reducing anxiety but impairing memory.", cn_def: "抑制中枢神经系统活动的药物，能减少焦虑但会损耗记忆。", hint: "‘强力镇静剂’。" },
+                { term: "Opioids", cn: "鸦片类药物", en_def: "Opium and its derivatives, used to relieve pain and create euphoria.", cn_def: "鸦片及其衍生物，用于止痛和产生欣快感。", hint: "‘强效止痛药’。高成瘾性。" },
+                { term: "Stimulants", cn: "兴奋剂", en_def: "Drugs that excite neural activity and speed up body functions.", cn_def: "激发神经活动并加速身体功能的药物。", hint: "‘大脑的能量饮品’。如可卡因、咖啡因。" },
+                { term: "Hallucinogens", cn: "致幻剂", en_def: "Psychedelic drugs that distort perceptions and evoke sensory images.", cn_def: "扭曲感知并唤起感官意象的精神药物。", hint: "‘大脑的幻灯片’。如LSD。" },
+
+                // Module 1.4: The Brain
+                { term: "Biological Psychologist", cn: "生物心理学家", en_def: "A psychologist that focuses on the links between biology and behavior.", cn_def: "专注于生物学与行为之间联系的心理学家。", hint: "‘神经探险者’。研究肉体如何产生灵魂。" },
+                { term: "Biopsychosocial Approach", cn: "生物心理社会视角", en_def: "An integrated approach that incorporates biological, psychological, and social-cultural levels of analysis.", cn_def: "综合生物、心理和社会文化层面进行分析的视角。", hint: "‘全景视角’。看病不能只看细胞，还要看心情和环境。" },
+                { term: "Neuroplasticity", cn: "神经可塑性", en_def: "The brain's ability to reorganizing after damage or build new pathways.", cn_def: "大脑受损后重新组织或建立新通路的能力。", hint: "‘橡皮泥大脑’。" },
+                { term: "Lesion", cn: "损伤/损毁", en_def: "Tissue destruction.", cn_def: "组织破坏。", hint: "‘破坏性观察’。" },
+                { term: "EEG", cn: "脑电图", en_def: "A recording of the waves of electrical activity sweeping across the brain's surface.", cn_def: "大脑表面电活动的记录。", hint: "‘脑波写手’。" },
+                { term: "fMRI", cn: "功能磁共振成像", en_def: "A technique for revealing bloodflow and brain activity.", cn_def: "揭示血流变化和大脑活动的技术。", hint: "‘大脑的动图’。" },
+                { term: "Medulla", cn: "延髓", en_def: "The base of the brainstem; controls heartbeat and breathing.", cn_def: "脑干基部；控制心跳和呼吸。", hint: "‘生存中心’。" },
+                { term: "Reticular Activating System (RAS)", cn: "网状激活系统", en_def: "A nerve network in the brainstem that plays an important role in controlling arousal.", cn_def: "脑干中负责控制警觉和觉醒的神经网络。", hint: "大脑的‘总电闸’。它决定你是醒着还是昏迷。" },
+                { term: "Thalamus", cn: "丘脑", en_def: "The brain's sensory switchboard.", cn_def: "大脑的感官中转站。", hint: "大脑的‘总机’。" },
+                { term: "Cerebellum", cn: "小脑", en_def: "Coordinates movement output and balance.", cn_def: "协调运动输出和平衡。", hint: "‘小人脑’。" },
+                { term: "Limbic System", cn: "边缘系统", en_def: "Associated with emotions and drives.", cn_def: "与情绪和动机有关。", hint: "‘情绪脑’。" },
+                { term: "Amygdala", cn: "杏仁核", en_def: "Linked to emotion, especially fear and anger.", cn_def: "与情绪有关，尤其是恐惧和愤怒。", hint: "‘恐惧中心’。" },
+                { term: "Hypothalamus", cn: "下丘脑", en_def: "Directs maintenance activities (eating, drinking, temp).", cn_def: "指挥进食、饮水、体温调节等维持活动。", hint: "大脑的‘恒温器’。" },
+                { term: "Hippocampus", cn: "海马体", en_def: "Helps process explicit memories for storage.", cn_def: "帮助处理并存储外显记忆。", hint: "‘记忆存储站’。" },
+                { term: "Cerebral Cortex", cn: "大脑皮层", en_def: "Highest level of information processing.", cn_def: "最高级的信息处理中心。", hint: "大脑的‘褶皱外壳’。" },
+                { term: "Frontal Lobes", cn: "额叶", en_def: "Making plans and judgments.", cn_def: "制定计划和判断。", hint: "‘理性司令部’。" },
+                { term: "Parietal Lobes", cn: "顶叶", en_def: "Receives sensory input for touch.", cn_def: "接收触觉感官输入。", hint: "‘触感中心’。" },
+                { term: "Occipital Lobes", cn: "枕叶", en_def: "Receives information from the visual fields.", cn_def: "接收视野信息。", hint: "‘视觉处理器’。" },
+                { term: "Temporal Lobes", cn: "颞叶", en_def: "Includes auditory areas.", cn_def: "包含听觉区域。", hint: "‘听觉中心’。" },
+                { term: "Motor Cortex", cn: "运动皮层", en_def: "Controls voluntary movements.", cn_def: "控制自发运动。", hint: "‘运动指挥塔’。" },
+                { term: "Somatosensory Cortex", cn: "躯体感觉皮层", en_def: "Processes body touch and movement sensations.", cn_def: "处理触觉和运动感觉。", hint: "‘感觉反馈点’。" },
+                { term: "Association Areas", cn: "联合区", en_def: "Areas of the cerebral cortex involved in higher mental functions.", cn_def: "大脑皮层中涉及高级心理功能的区域。", hint: "‘拼图室’。把感觉拼凑成意义。" },
+                { term: "Neurogenesis", cn: "神经发生", en_def: "The formation of new neurons.", cn_def: "新神经元的形成过程。", hint: "‘大脑再生’。" },
+                { term: "Corpus Callosum", cn: "胼胝体", en_def: "Connects the two brain hemispheres.", cn_def: "连接左、右两大脑半球。", hint: "‘大脑的跨海大桥’。" },
+                { term: "Contralateral Organization", cn: "对侧组织", en_def: "One side of the brain controls the opposite side of the body.", cn_def: "大脑一侧控制身体另一侧的现象。", hint: "‘左撇子右脑管’。" },
+                { term: "Split Brain", cn: "分裂脑", en_def: "Condition resulting from cutting the corpus callosum.", cn_def: "切断胼胝体后大脑两半球隔离开的状态。", hint: "‘大脑闹分家’。" },
+
+                // Module 1.5 Sleep
+                { term: "Consciousness", cn: "意识", en_def: "Our awareness of ourselves and our environment.", cn_def: "我们对自身及环境的觉知状态。", hint: "‘醒着的觉察’。" },
+                { term: "Cognitive Neuroscience", cn: "认知神经科学", en_def: "Interdisciplinary study of the brain activity linked with cognition.", cn_def: "研究大脑活动与认知之间联系的跨学科研究。", hint: "‘思维的生理学’。" },
+                { term: "Circadian Rhythm", cn: "昼夜节律", en_def: "Regular bodily rhythms (e.g., of temperature and sleep) that occur on a 24-hour cycle.", cn_def: "在24小时周期内发生的规律性身体节律（如体温和睡眠）。", hint: "‘生物钟’。" },
+                { term: "REM Sleep", cn: "快速眼动睡眠", en_def: "Rapid eye movement sleep; a recurring sleep stage during which vivid dreams commonly occur.", cn_def: "一个周期性出现的睡眠阶段，期间常发生生动的梦境。", hint: "‘做梦现场’。虽然在睡觉，但脑电波像醒着一样活跃。" },
+                { term: "NREM Sleep", cn: "非快速眼动睡眠", en_def: "Non-rapid eye movement sleep; encompasses all sleep stages except for REM sleep.", cn_def: "除了快速眼动睡眠之外的所有睡眠阶段的总称。", hint: "‘安静的睡眠’。" },
+                { term: "Alpha Waves", cn: "α波", en_def: "Relatively slow brain waves of a relaxed, awake state.", cn_def: "处于放松、清醒状态时相对缓慢的脑电波。", hint: "‘闭目养神波’。" },
+                { term: "Hypnagogic Sensations", cn: "入睡期幻觉", en_def: "Sensations like falling or floating that occur while falling asleep.", cn_def: "入睡时产生的如坠落或漂浮的感觉。", hint: "‘被鬼压床’或‘突然踩空’的感觉。" },
+                { term: "Delta Waves", cn: "δ波", en_def: "Large, slow brain waves associated with deep sleep.", cn_def: "与深度睡眠相关的巨大、缓慢的脑电波。", hint: "‘深睡巨波’。" },
+                { term: "Insomnia", cn: "失眠", en_def: "Recurring problems in falling or staying asleep.", cn_def: "反复出现的入睡或维持睡眠困难的问题。", hint: "‘长夜漫漫无心睡眠’。" },
+                { term: "Narcolepsy", cn: "发作性睡病", en_def: "A sleep disorder characterized by uncontrollable sleep attacks.", cn_def: "以无法控制的睡眠发作为特征的睡眠障碍。", hint: "‘秒睡帝’。走着走着可能就突然栽倒进入REM睡眠。" },
+                { term: "Sleep Apnea", cn: "睡眠呼吸暂停", en_def: "A sleep disorder characterized by temporary cessations of breathing during sleep.", cn_def: "以睡眠期间呼吸暂时停止为特征的睡眠障碍。", hint: "‘憋气式打呼噜’。" },
+                { term: "REM Sleep Behavior Disorder", cn: "REM睡眠行为障碍", en_def: "A sleep disorder where a person acts out their dreams.", cn_def: "一种在梦境中活动身体、把梦演出来的睡眠障碍。", hint: "‘梦中武打家’。本该全身麻痹的REM阶段，肌肉却动了。" },
+                { term: "Dreams", cn: "梦", en_def: "A sequence of images, emotions, and thoughts passing through a sleeping person's mind.", cn_def: "睡眠者脑海中出现的一系列意象、情绪和思想。", hint: "‘夜间影院’。" },
+                { term: "REM Rebound", cn: "REM反弹", en_def: "The tendency for REM sleep to increase following REM sleep deprivation.", cn_def: "在REM睡眠剥夺后，REM阶段增加的倾向。", hint: "‘补觉的反击’。" },
+                { term: "Activation Synthesis Theory", cn: "激活-整合理论", en_def: "The theory that dreams are the brain's attempt to synthesize random neural activity.", cn_def: "认为梦是大脑试图将随机神经活动编成故事的理论。", hint: "‘瞎编乱造’。大脑在清理垃圾信号时顺便讲了个离谱的故事。" },
+                { term: "Consolidation Theory", cn: "巩固理论", en_def: "The theory that sleep helps consolidate the day's experiences into long-term memory.", cn_def: "认为睡眠有助于将当天的经历巩固到长时记忆中的理论。", hint: "‘夜间存档员’。一边睡觉一边把学到的知识存进硬盘。" },
+
+                // Module 1.6 Sensation
+                { term: "Sensation", cn: "感觉", en_def: "The process by which our sensory receptors receive stimulus energies from our environment.", cn_def: "我们的感官受器接收来自环境的刺激能量的过程。", hint: "‘原始数据输入’。" },
+                { term: "Sensory Receptors", cn: "感官受器", en_def: "Sensory nerve endings that respond to stimuli.", cn_def: "对刺激作出反应的感觉神经末梢。", hint: "‘生物传感器’。" },
+                { term: "Perception", cn: "知觉", en_def: "The process of organizing and interpreting sensory information.", cn_def: "组织和解释感官信息的过程。", hint: "‘给数据贴标签’。看到红点（感觉）并意识到那是火（知觉）。" },
+                { term: "Blindsight", cn: "盲视", en_def: "A condition in which a person can respond to a visual stimulus without consciously experiencing it.", cn_def: "指人能对视觉刺激做出反应，但主观上却看不到它的现象。", hint: "‘身体看见了，但脑子没看见’。虽然觉得自己瞎了，却能避开路上的障碍。" },
+                { term: "Bottom-Up Processing", cn: "自下而上的加工", en_def: "Analysis that begins with the sensory receptors and works up to the brain's integration of sensory information.", cn_def: "从底层感官输入开始向高级处理阶段发展的加工过程。", hint: "‘像素级感知’。像婴儿第一次看世界，完全靠感官输入拼凑。" },
+                { term: "Top-Down Processing", cn: "自上而下的加工", en_def: "Information processing guided by higher-level mental processes.", cn_def: "受经验、动机和期望驱动的信息加工过程。", hint: "‘脑补大师’。根据你的背景知识来理解看到的东西。" },
+                { term: "Absolute Threshold", cn: "绝对阈限", en_def: "The minimum stimulation needed to detect a particular stimulus 50 percent of the time.", cn_def: "在50%的时间里能检测到特定刺激所需的最小刺激量。", hint: "‘检测的底线’。你能听到的最轻的声音。" },
+                { term: "Signal Detection Theory", cn: "信号检测论", en_def: "A theory predicting how and when we detect the presence of a faint stimulus (signal) amid background stimulation (noise).", cn_def: "预测我们如何及何时在背景噪音中检测到微弱信号的理论。", hint: "‘新妈妈能听到宝宝一丁点哭声’。跟生理和期待度有关。" },
+                { term: "Difference Threshold", cn: "差别阈限", en_def: "The minimum difference between two stimuli required for detection 50 percent of the time.", cn_def: "在50%的时间里能检测到两个刺激之间差异的最小改变量。", hint: "‘刚刚能辨别出的差异’。也叫jnd。" },
+                { term: "Weber's Law", cn: "韦伯定律", en_def: "The principle that, to be perceived as different, two stimuli must differ by a constant minimum percentage.", cn_def: "为了感知到差异，两个刺激必须按恒定比例（而非恒定量）变化的原理。", hint: "‘一斤苹果多给一两你能感觉到，十斤苹果多给一两你感觉不到’。" },
+                { term: "Sensory Adaptation", cn: "感觉适应", en_def: "Diminished sensitivity as a consequence of constant stimulation.", cn_def: "由于持续受刺激而导致敏感度降低的现象。", hint: "‘久居兰室不闻其香’。时间长了你就不觉得室友身上有味了。" },
+                { term: "Sensory Interaction", cn: "感觉相互作用", en_def: "The principle that one sense may influence another.", cn_def: "一种感觉可能会影响另一种感觉的原理。", hint: "‘感冒了吃东西没味’。嗅觉影响了味觉。" },
+                { term: "Wavelength", cn: "波长", en_def: "The distance from the peak of one light or sound wave to the peak of the next.", cn_def: "光波或声波一个波峰到下一个波峰之间的距离。", hint: "决定‘颜色’或‘音调’。" },
+                { term: "Intensity", cn: "强度", en_def: "The amount of energy in a light or sound wave.", cn_def: "光波或声波中所包含的能量多少。", hint: "决定‘亮度’或‘音量’。" },
+                { term: "Hue", cn: "色调", en_def: "The dimension of color that is determined by the wavelength of light.", cn_def: "由光波长度决定的颜色维度。", hint: "就是‘什么颜色’。" },
+                { term: "Ganglion Cells", cn: "神经节细胞", en_def: "Neurons in the eye that receive information from bipolar cells; their axons form the optic nerve.", cn_def: "眼球中从双极细胞接收信息的神经元；其轴突构成视神经。", hint: "视觉的‘出口汇总员’。" },
+                { term: "Accommodation (Visual)", cn: "视觉调节", en_def: "The process by which the eye's lens changes shape to focus near or far objects on the retina.", cn_def: "眼睛晶状体改变形状以使近处或远处物体聚焦在视网膜上的过程。", hint: "屏幕‘变焦’功能。" },
+                { term: "Rods", cn: "视杆细胞", en_def: "Retinal receptors that detect black, white, and gray; necessary for peripheral and twilight vision.", cn_def: "探测黑白灰的视网膜受体；负责外周和微光视觉。", hint: "‘夜视仪’。在暗处它们很管用。" },
+                { term: "Cones", cn: "视锥细胞", en_def: "Retinal receptors that function in daylight or in well-lit conditions; detect fine detail and color.", cn_def: "在日光或光线充足时工作的受体；探测细节和颜色。", hint: "‘彩显头’。在亮处它们管用，且能分辨颜色。" },
+                { term: "Fovea", cn: "中央凹", en_def: "The central focal point in the retina, around which the eye's cones cluster.", cn_def: "视网膜的中心焦点，大量视锥细胞聚集于此。", hint: "‘最清晰点’。你想看清细节时，眼球会自动把像对准这里。" },
+                { term: "Optic Nerve", cn: "视神经", en_def: "The nerve that carries neural impulses from the eye to the brain.", cn_def: "将神经冲动从眼球带向大脑的神经。", hint: "‘视觉数据线’。" },
+                { term: "Blind Spot", cn: "盲点", en_def: "The point at which the optic nerve leaves the eye, creating a 'blind' spot because no receptor cells are located there.", cn_def: "视神经离开眼球的点，因为没有受体细胞，这里是视觉盲区。", hint: "‘视觉空洞’。" },
+                { term: "Nearsightedness", cn: "近视", en_def: "A condition in which nearby objects are seen more clearly than distant objects.", cn_def: "近处物体比远处物体看更清楚的状态。", hint: "眼球太长。" },
+                { term: "Farsightedness", cn: "远视", en_def: "A condition in which faraway objects are seen more clearly than near objects.", cn_def: "远处物体比近处物体看更清楚的状态。", hint: "眼球太短。" },
+                { term: "Trichromatic Theory", cn: "三原色理论", en_def: "The theory that the retina contains three different color receptors—red, green, and blue.", cn_def: "视网膜包含红、绿、蓝三种不同颜色受体的理论。", hint: "也叫Young-Helmholtz理论。" },
+                { term: "Opponent Process Theory", cn: "拮抗加工理论", en_def: "The theory that opposing retinal processes (red-green, yellow-blue, white-black) enable color vision.", cn_def: "认为对立的视网膜加工过程（红绿、黄蓝、黑白）实现了彩色视觉的理论。", hint: "解释‘错觉后像’。看到绿旗子的鬼影变成红色就是这个原理。" },
+                { term: "Dichromatism", cn: "二色视觉", en_def: "A condition in which one of the three basic color mechanisms is absent or not functioning.", cn_def: "三种基本颜色机制中有一种缺失或不正常的色盲状态。", hint: "最常见的‘色盲’形式。" },
+                { term: "Monochromatism", cn: "全色盲", en_def: "Total color blindness.", cn_def: "完全的色盲，只能看黑白灰。", hint: "像老式黑白电视。" },
+                { term: "Afterimage", cn: "后像", en_def: "A visual image that persists after a stimulus is removed.", cn_def: "刺激移除后仍然存留的视觉映像。", hint: "盯着灯看很久，闭上眼还有个影子。" },
+                { term: "Feature Detectors", cn: "特征检测器", en_def: "Nerve cells in the brain that respond to specific features of the stimulus (e.g., shape, angle).", cn_def: "大脑中对刺激的特定特征（如形状、角度）做出反应的神经细胞。", hint: "‘专门的分拣员’。有的只看横线，有的只看弧线。" },
+                { term: "Parallel Processing", cn: "平行加工", en_def: "The processing of many aspects of a problem simultaneously.", cn_def: "在大脑中同时处理问题的多个方面。", hint: "‘多线程处理’。大脑能同时处理颜色、形状、运动、深度。" },
+                { term: "Audition", cn: "听觉", en_def: "The sense or act of hearing.", cn_def: "听觉或听的过程。", hint: "就是‘听’。" },
+                { term: "Frequency", cn: "频率", en_def: "The number of complete wavelengths that pass a point in a given time.", cn_def: "单位时间内通过某一点的完整波的数量。", hint: "决定‘音调’。" },
+                { term: "Pitch", cn: "音调/音高", en_def: "A tone's experienced highness or lowness; depends on frequency.", cn_def: "体验到的声音的高低；取决于频率。", hint: "高音低音之分。" },
+                { term: "Middle Ear", cn: "中耳", en_def: "Contains three tiny bones (hammer, anvil, stirrup) that concentrate sound vibrations.", cn_def: "包含三块听小骨，负责集中声音震动。", hint: "‘放大器’。" },
+                { term: "Cochlea", cn: "耳蜗", en_def: "A coiled, bony, fluid-filled tube in the inner ear involved in transduction.", cn_def: "内耳中充满了液体的螺旋形骨管，负责换能。", hint: "听觉的‘转换站’。把震动变电信号。" },
+                { term: "Inner Ear", cn: "内耳", en_def: "The innermost part of the ear, containing the cochlea, semicircular canals, and vestibular sacs.", cn_def: "耳朵最深处，包含耳蜗、半规管和前庭囊。", hint: "听觉和平衡的核心所在地。" },
+                { term: "Sensorineural Hearing Loss", cn: "感音神经性耳聋", en_def: "Hearing loss caused by damage to the cochlea's receptor cells or to the auditory nerves.", cn_def: "由耳蜗受体细胞或听神经受损引起的听力损失。", hint: "‘接收器坏了’。常见于噪音损伤。" },
+                { term: "Conduction Hearing Loss", cn: "传导性耳聋", en_def: "Hearing loss caused by damage to the mechanical system that conducts sound waves to the cochlea.", cn_def: "由将声波导向耳蜗的机械系统受损引起的听力损失。", hint: "‘通路堵了’。如耳垢堵塞或听小骨受损。" },
+                { term: "Place Theory", cn: "位置理论", en_def: "Theory that links the pitch we hear with the place where the cochlea's membrane is stimulated.", cn_def: "认为听到的音调与耳蜗膜被刺激的位置有关的理论。", hint: "‘位置决定高度（频率）’。" },
+                { term: "Frequency Theory", cn: "频率理论", en_def: "Theory that the rate of nerve impulses traveling up the auditory nerve matches the frequency of a tone.", cn_def: "认为神经冲动频率与音调频率一致的理论。", hint: "‘速度匹配理论’。" },
+                { term: "Gate-Control Theory", cn: "闸门控制理论", en_def: "Theory that the spinal cord contains a neurological 'gate' that blocks pain signals or allows them to pass on to the brain.", cn_def: "认为脊髓中有一个‘闸门’能阻断或放行疼痛信号的理论。", hint: "‘拍拍就不疼了’。通过非疼痛刺激干扰疼痛信号传输。" },
+                { term: "Gustation", cn: "味觉", en_def: "The sense of taste.", cn_def: "通过舌头感知的味觉。", hint: "舌尖上的味道。" },
+                { term: "Olfaction", cn: "嗅觉", en_def: "The sense of smell.", cn_def: "通过鼻子感知的嗅觉。", hint: "闻味儿。" },
+                { term: "Umami", cn: "鲜味", en_def: "A savory taste.", cn_def: "除了酸甜苦咸之外的第五种味道（就像味精、肉）。", hint: "‘咸鲜味’。" },
+                { term: "Oleogustus", cn: "脂味", en_def: "The taste of fat.", cn_def: "脂肪的味道。", hint: "近期发现的潜在第六种基本味道。" },
+                { term: "Pheromones", cn: "信息素", en_def: "Chemical signals released by an animal that communicate information and affect the behavior of other animals.", cn_def: "动物释放的化学信号，能传递信息并影响其他动物的行为。", hint: "‘无声的化学诱惑’。" },
+                { term: "Kinesthesis", cn: "动觉", en_def: "The system for sensing the position and movement of individual body parts.", cn_def: "感知身体各部分位置和运动的系统。", hint: "让你闭着眼也能准确碰到自己的脚趾。" },
+                { term: "Vestibular Sense", cn: "前庭觉", en_def: "The sense of body movement and position, including the sense of balance.", cn_def: "对身体运动和位置的感知，包括平衡感。", hint: "‘大脑平衡仪’。内耳里的液体告诉你头的倾斜角度。" },
+                { term: "Phantom Limb Syndrome", cn: "幻肢症", en_def: "The feeling that an amputated limb is still present.", cn_def: "感觉到已经截掉的肢体依然存在的现象。", hint: "‘不存在的痛’。大脑皮层还在寻找那个肢体发出的信号。" },
+                { term: "Medulla", cn: "延髓", en_def: "The base of the brainstem; controls heartbeat and breathing.", cn_def: "脑干的基部；控制心跳和呼吸。", hint: "大脑的‘生命维持点’。如果这里坏了，恐怕就没法呼吸了。" },
+                { term: "Thalamus", cn: "丘脑", en_def: "The brain's sensory switchboard, located on top of the brainstem.", cn_def: "大脑的感官中转站，位于脑干顶部。", hint: "大脑的‘总台接待’。除了嗅觉，所有感官信息都要先到它这里打卡，再分发到皮层。" },
+                { term: "Reticular Formation", cn: "网状结构", en_def: "A nerve network in the brainstem that plays an important role in controlling arousal.", cn_def: "脑干中的神经网络，在控制警觉和觉醒方面起重要作用。", hint: "大脑的‘闹钟’。它决定你是清醒还是睡着，甚至能拦截那些不重要的背景噪音。" },
+                { term: "Cerebellum", cn: "小脑", en_def: "The 'little brain' at the rear of the brainstem; functions include processing sensory input and coordinating movement output and balance.", cn_def: "位于脑干后方的‘小脑’；功能包括处理感官输入、协调运动输出和平衡。", hint: "大脑的‘陀螺仪’。你能稳稳地走路、优雅地跳舞，全靠它的精细调节。" },
+                { term: "Limbic System", cn: "边缘系统", en_def: "Neural system located below the cerebral hemispheres; associated with emotions and drives.", cn_def: "位于大脑半球下方的神经系统；与情绪和动机有关。", hint: "大脑的‘情感与欲望中心’。包含海马体、杏仁核和下丘脑。" },
+                { term: "Amygdala", cn: "杏仁核", en_def: "Two lima-bean-sized neural clusters in the limbic system; linked to emotion.", cn_def: "边缘系统中两颗豆形的神经核团；调节情绪（尤其是恐惧和攻击性）。", hint: "大脑的‘警报器’。遇到危险时那种瞬间的恐惧感就是它发出的，让你立刻进入应战状态。" },
+                { term: "Hypothalamus", cn: "下丘脑", en_def: "It directs several maintenance activities (eating, drinking, body temperature).", cn_def: "指挥维持生命活动（进食、饮水、体温调节）。", hint: "大脑的‘恒温调节器’。它还管性欲和奖励机制（老鼠电击诱惑实验）。" },
+                { term: "Hippocampus", cn: "海马体", en_def: "A neural center located in the limbic system; helps process explicit memories for storage.", cn_def: "位于边缘系统的神经中心；帮助处理并存储外显记忆。", hint: "大脑的‘存档管理员’。如果坏了，你就再也记不住新发生的事情了（如电影《记忆碎片》）。" },
+                { term: "Cerebral Cortex", cn: "大脑皮层", en_def: "The intricate fabric of interconnected neural cells covering the cerebral hemispheres.", cn_def: "覆盖在大脑半球表面、由相互连接的神经细胞组成的复杂组织。", hint: "大脑的‘总司令部’。它是人类最高级的信息处理中心和各种心理功能的所在地。" },
+                { term: "Frontal Lobes", cn: "额叶", en_def: "Involved in speaking and muscle movements and in making plans and judgments.", cn_def: "涉及言语、肌肉运动、制定计划和判断。", hint: "大脑的‘CEO’。负责高端思考、人格和执行任务。著名的菲尼亚斯·盖奇案例就伤到了这里。" },
+                { term: "Parietal Lobes", cn: "顶叶", en_def: "Receives sensory input for touch and body position.", cn_def: "接收触觉和身体位置的感官输入。", hint: "大脑的‘坐标系’。你在黑暗中摸到自己的鼻子，全靠顶叶处理位置信息。" },
+                { term: "Occipital Lobes", cn: "枕叶", en_def: "Includes areas that receive information from the visual fields.", cn_def: "包含接收视野信息的区域。", hint: "大脑的‘显示器’。后脑勺挨一闷棍会‘眼冒金星’，就是因为枕叶被震到了。" },
+                { term: "Temporal Lobes", cn: "颞叶", en_def: "Includes the auditory areas, each receiving information primarily from the opposite ear.", cn_def: "包含听觉区域，每个区域主要接收来自对侧耳朵的信息。", hint: "大脑的‘音箱’。负责倾听世界，也与记忆和语言理解密切相关。" },
+                { term: "Motor Cortex", cn: "运动皮层", en_def: "An area at the rear of the frontal lobes that controls voluntary movements.", cn_def: "额叶后部控制自发运动的区域。", hint: "大脑的‘遥控器’。它的一端管脚，一端管脸，指挥全身肌肉动起来。" },
+                { term: "Somatosensory Cortex", cn: "躯体感觉皮层", en_def: "Area at the front of the parietal lobes that registers and processes body touch and movement sensations.", cn_def: "顶叶前部登记和处理身体触觉及运动感觉的区域。", hint: "大脑的‘触摸屏’。嘴唇和手指在皮层占的比例最大，因为它们最敏感。" },
+                { term: "Association Areas", cn: "联合区", en_def: "Areas of the cerebral cortex that are not involved in primary motor or sensory functions.", cn_def: "大脑皮层中不涉及基本运动或感觉功能的区域，负责高级心理功能。", hint: "大脑的‘总控制室’。负责把散落的信息拼成有意义的理解、思考和回忆。" },
+                { term: "Plasticity", cn: "可塑性", en_def: "The brain's ability to change, especially during childhood, by reorganizing after damage or by building new pathways based on experience.", cn_def: "大脑改变的能力，特别是在童年时期，或在受损后重新组织，或根据经验建立新通路。", hint: "‘大脑是橡皮泥’。学习新技能或中风康复，靠的就是神经元‘改道’。" },
+                { term: "Neurogenesis", cn: "神经发生", en_def: "The formation of new neurons.", cn_def: "新神经元的形成过程。", hint: "大脑的‘再生’。虽然有限，但人类终其一生大脑其实都在产生新的细胞。" },
+                { term: "Corpus Callosum", cn: "胼胝体", en_def: "The large band of neural fibers connecting the two brain hemispheres and carrying messages between them.", cn_def: "连接左、右两大脑半球并在这两者之间传递信息的巨大神经纤维束。", hint: "大脑的‘跨海大桥’。左脑和右脑全靠它在中间协调，切断它就会产生‘分裂脑’。" },
+                { term: "Split Brain", cn: "分裂脑", en_def: "A condition resulting from surgery that isolates the brain's two hemispheres by cutting the corpus callosum.", cn_def: "通过切断胼胝体使大脑两半球隔离开来的手术状态。", hint: "‘同一个脑袋，两个灵魂’。左脑能说话，右脑能操作左手，互不干扰却又极其怪异。" },
+                { term: "Broca's Area", cn: "布洛卡区", en_def: "Controls language expression; an area of the frontal lobe, usually in the left hemisphere, that directs the muscle movements involved in speech.", cn_def: "控制语言表达；额叶（通常在左半球）中指挥说话时肌肉运动的区域。", hint: "大脑的‘演说家’。如果这里坏了，你能听懂，但就是咬牙切齿吐不出一个完整的词。" },
+                { term: "Wernicke's Area", cn: "威尔尼克区", en_def: "Controls language reception; a brain area involved in language comprehension and expression; usually in the left temporal lobe.", cn_def: "控制语言接收；涉及语言理解和表达的大脑区域；通常位于左颞叶。", hint: "大脑的‘翻译官’。如果这里坏了，你说话很顺溜但像‘乱码’，且完全听不懂别人的话。" }
+            ],
+            "Unit 2: Cognition": [
+                // Topic 2.1: Perception
+                { term: "Bottom-up processing", cn: "自下而上的加工", en_def: "Analysis that begins with the sensory receptors and works up to the brain's integration of sensory information.", cn_def: "从底层感官输入开始向高级处理阶段发展的加工过程。", hint: "‘像素级感知’。像婴儿第一次看世界，完全靠感官输入拼凑。" },
+                { term: "Top-down processing", cn: "自上而下的加工", en_def: "Information processing guided by higher-level mental processes, as when we construct perceptions drawing on our experience and expectations.", cn_def: "受经验、动机和期望驱动的信息加工过程。", hint: "‘脑补大师’。根据你的背景知识来理解看到的东西。" },
+                { term: "Schema", cn: "图式", en_def: "A concept or framework that organizes and interprets information.", cn_def: "组织和解释信息的概念或框架。", hint: "大脑里的‘分类文件夹’。看到四条腿、汪汪叫的就扔进‘狗’这个文件夹。" },
+                { term: "Perceptual set", cn: "知觉定势", en_def: "A mental predisposition to perceive one thing and not another.", cn_def: "感知某一事物而非另一事物的心理倾向。", hint: "‘先入为主’。如果你被告知要看到一个老妇人，你在这张模糊的画里就很蓝看到少女。" },
+                { term: "Context", cn: "情境", en_def: "The circumstances that form the setting for an event, statement, or idea.", cn_def: "形成事件、陈述或想法背景的情况。", hint: "‘环境影响判断’。同一个高个子，在篮球队里显得矮，在普通人里显得高。" },
+                { term: "Gestalts: closure", cn: "格式塔：闭合律", en_def: "The tendency to fill in gaps to create a complete, whole object.", cn_def: "倾向于填补空白以创建一个完整、整体的对象。", hint: "‘联想补全’。看到三条没连上的弧线，你的大脑会自动把它看成一个圆。" },
+                { term: "Gestalts: figure and ground", cn: "格式塔：图形与背景", en_def: "The organization of the visual field into objects (the figures) that stand out from their surroundings (the ground).", cn_def: "将视野组织为从周围环境（背景）中脱颖而出的对象（图形）。", hint: "‘主角与配角’。看那张著名的杯子/人脸图，你一次只能看到杯子或者是人脸。" },
+                { term: "Gestalts: proximity", cn: "格式塔：接近律", en_def: "The tendency to group nearby figures together.", cn_def: "倾向于将彼此靠近的图形分为一组。", hint: "‘近朱者赤’。几条挨在一起的竖线会被你看成‘一排’。" },
+                { term: "Gestalts: similarity", cn: "格式塔：相似律", en_def: "The tendency to group similar figures together.", cn_def: "倾向于将相似的图形分为一组。", hint: "‘物以类聚’。穿同样颜色队服的人会被你看成一个团队。" },
+                { term: "Selective attention", cn: "选择性注意", en_def: "The focusing of conscious awareness on a particular stimulus.", cn_def: "将意识聚焦于特定刺激的过程。", hint: "大脑的‘聚光灯’。晚饭桌上那么吵，你却能精准听到有人在说你坏话。" },
+                { term: "Cocktail party effect", cn: "鸡尾酒会效应", en_def: "Your ability to attend to only one voice among many.", cn_def: "在嘈杂环境下专注于单一声音的能力。", hint: "如果你在聚会上听到自己的名字，你的注意力会瞬间‘瞬移’过去。" },
+                { term: "Inattentional blindness", cn: "无意盲视", en_def: "Failing to see visible objects when our attention is directed elsewhere.", cn_def: "当注意力集中在别处时看而不见明显物体的现象。", hint: "‘大猩猩实验’。你光顾着数传球次数，却没看见一个穿猩猩皮的人走过。" },
+                { term: "Change blindness", cn: "变化盲视", en_def: "Failing to notice changes in the environment.", cn_def: "未能注意到环境中的变化。", hint: "‘移花接木’。实验者中途换了个人跟你说话，你可能完全没发现。" },
+                { term: "Binocular cue: Retinal disparity", cn: "双眼线索：视网膜像差", en_def: "A binocular cue for perceiving depth by comparing images from the retinas in the two eyes.", cn_def: "通过比较两眼视网膜上的图像差异来感知深度的双眼线索。", hint: "‘两眼看世界’。把手指放在眼前，左眼看和右眼看位置不一样，离得越近差得越多。" },
+                { term: "Binocular cue: Convergence", cn: "双眼线索：聚合", en_def: "The extent to which the eyes converge inward when looking at an object.", cn_def: "看物体时眼睛向内聚合的程度。", hint: "‘对眼儿’。物体离你越近，你的两眼就得越往中间考，大脑以此判断距离。" },
+                { term: "Monocular cue: relative clarity", cn: "单眼线索：相对清晰度", en_def: "Hazy objects are farther away than sharp, clear objects.", cn_def: "模糊的物体比清晰的物体看起来更远。", hint: "‘远方的朦胧’。远山总是雾蒙蒙的，近处的树叶却脉络清晰。" },
+                { term: "Monocular cue: relative size", cn: "单眼线索：相对大小", en_def: "If two objects are similar in size, the one that casts a smaller retinal image is farther away.", cn_def: "如果两个物体大小相似，成像较小的那个看起来更远。", hint: "‘近大远小’。远处的大巴车在视网膜上可能还没你手指大。" },
+                { term: "Monocular cue: texture gradient", cn: "单眼线索：纹理梯度", en_def: "A gradual change from a coarse, distinct texture to a fine, indistinct texture signals increasing distance.", cn_def: "从粗糙清晰的纹理到细密模糊纹理的渐变预示着距离增加。", hint: "‘近处看砖，远处看墙’。脚底下的石子颗颗分明，远处的石子路就像一条色带。" },
+                { term: "Monocular cue: interposition", cn: "单眼线索：遮挡/重叠", en_def: "If one object partially blocks our view of another, we perceive it as closer.", cn_def: "如果一个物体挡住了另一个，我们认为挡人的那个更近。", hint: "‘他在我前面’。桌子挡住了椅子的一角，说明桌子离我更近。" },
+                { term: "Perceptual constancies", cn: "知觉恒常性", en_def: "Perceiving objects as unchanging even as illumination and retinal images change.", cn_def: "即使光照或视网膜成像改变，仍认为物体属性保持不变。", hint: "‘属性不变’。开门时门的形状从长方形变成了梯形，但你仍然知道它是长方形。" },
+                { term: "Apparent movement", cn: "似动现象", en_def: "An optical illusion of motion produced by a series of still images.", cn_def: "由一系列静止图像产生的运动错觉。", hint: "‘霓虹闪烁’。路边亮起的灯泡依次闪烁，看起来像是有光在跑。" },
+
+                // Topic 2.2: Thinking, Problem-Solving, Judgments, and Decision Making
+                { term: "Concepts", cn: "概念", en_def: "A mental grouping of similar objects, events, ideas, or people.", cn_def: "对相似物体、事件、想法或人的心理分组。", hint: "‘精神文件夹’。‘椅子’这个概念包含了各种形状的凳子。" },
+                { term: "Prototypes", cn: "原型", en_def: "A mental image or best example of a category.", cn_def: "某一类别的典型代表或最佳例子。", hint: "‘形象代言人’。提到鸟，你脑子里先浮现的是麻雀（原型），而不是企鹅。" },
+                { term: "Assimilation", cn: "同化", en_def: "Interpreting our new experiences in terms of our existing schemas.", cn_def: "根据现有图式解释新经验的过程。", hint: "‘以此类推’。小孩见过狗，见到小羊也叫‘狗’（把它塞进已有的文件夹）。" },
+                { term: "Accommodation", cn: "顺应", en_def: "Adapting our current understandings to incorporate new information.", cn_def: "调整现有理解以纳入新信息的过程。", hint: "‘更新系统’。小孩发现羊不叫汪汪，于是建立了一个新的‘羊’文件夹。" },
+                { term: "Algorithm", cn: "算法", en_def: "A methodical, logical rule or procedure that guarantees solving a particular problem.", cn_def: "保证能得到解决方案的、按部就班的程序。", hint: "‘地毯式搜索’。为了找钥匙翻遍每一寸地板，慢但稳。" },
+                { term: "Heuristics", cn: "启发法", en_def: "A simple thinking strategy that often allows us to make judgments and solve problems efficiently.", cn_def: "一种简单的、通常能高效解决问题但未必准确的思维策略。", hint: "‘经验法则’。进超市想买牛奶，你直接去冷藏柜而不是全场扫货。" },
+                { term: "Representativeness heuristic", cn: "代表性启发法", en_def: "Judging the likelihood of things in terms of how well they seem to represent, or match, particular prototypes.", cn_def: "根据某事物与特定原型的匹配程度来判断其概率。", hint: "‘以貌取人’。看一个人戴眼镜、爱看书，就觉得他是教授而不是农民（由于他更符合教授的原型）。" },
+                { term: "Availability heuristic", cn: "易得性启发法", en_def: "Estimating the likelihood of events based on their availability in memory.", cn_def: "根据记忆中相关例子的易得程度来估算事件发生的频率。", hint: "‘印象太深刻’。因为看过坠机新闻，就觉得坐飞机比开车更危险（其实开车事故率更高）。" },
+                { term: "Mental set", cn: "心向/思维定势", en_def: "A tendency to approach a problem in one particular way, often a way that has been successful in the past.", cn_def: "倾向于用以往成功过的方法来解决问题。", hint: "‘老套路’。以前电脑坏了重启就好，现在死机了你还是只想重启。" },
+                { term: "Priming", cn: "启动效应", en_def: "The activation, often unconsciously, of certain associations, thus predisposing one's perception, memory, or response.", cn_def: "在无意识中激活某些联想，从而影响后续的感知或反应。", hint: "‘潜意识轰炸’。刚看过红色的词，再问你水果名，你更可能说‘苹果’。" },
+                { term: "Framing", cn: "框架效应", en_def: "The way an issue is posed; how an issue is framed can significantly affect decisions and judgments.", cn_def: "问题的呈现方式；不同的描述方式会影响决策。", hint: "‘话术的力量’。90%的存活率听起来比10%的死亡率要诱人得多。" },
+                { term: "Gambler's fallacy", cn: "赌徒谬误", en_def: "The mistaken belief that, if something happens more frequently than normal during a given period, it will happen less frequently in the future.", cn_def: "错误地认为，如果某事发生频率高于正常值，未来发生的概率就会降低。", hint: "‘风水轮流转’。连开了10次正面，你觉得下次一定是反面，其实概率还是50%。" },
+                { term: "Sunk-cost fallacy", cn: "沉没成本谬误", en_def: "Continuing a behavior or endeavor as a result of previously invested resources (time, money or effort).", cn_def: "因为已经投入了资源而坚持做一件已经划不来的事。", hint: "‘来都来了’。电影超级烂，但因为买了票，你还是坚持看完了。" },
+                { term: "Executive function", cn: "执行功能", en_def: "Set of cognitive processes that are necessary for the cognitive control of behavior.", cn_def: "控制行为所需的一系列高级认知过程。", hint: "大脑的‘指挥塔’。负责计划、决策、抗拒诱惑和切换任务。" },
+                { term: "Divergent thinking", cn: "发散性思维", en_def: "Expands the number of possible problem solutions; creative thinking that divulges in different directions.", cn_def: "从一个点出发产生多种可能的解决方案，与创造力相关。", hint: "‘头脑风暴’。回形针除了夹纸还能干什么？想出越多答案说明发散性越强。" },
+                { term: "Convergent thinking", cn: "聚合性思维", en_def: "Narrows the available problem solutions to determine the single best solution.", cn_def: "缩小范围以寻找唯一的最佳解决方案。", hint: "‘标准化考试’。四个选项里选出唯一的正确答案。" },
+                { term: "Functional fixedness", cn: "功能固着", en_def: "The tendency to think of things only in terms of their usual functions.", cn_def: "倾向于只看到物体的常规功能。", hint: "‘死脑筋’。找锤子找不到，却没想过手里沉甸甸的扳手也能砸钉子。" },
+
+                // Topic 2.3: Introduction to Memory
+                { term: "Explicit memory", cn: "外显记忆", en_def: "Memory of facts and experiences that one can consciously know and 'declare'.", cn_def: "有意识地提取出来的关于事实和经历的记忆。", hint: "‘能说出来的’。比如你第一次约会的地点，或者中国的首都是北京。" },
+                { term: "Episodic memory", cn: "情境记忆", en_def: "The collection of past personal experiences that occurred at a particular time and place.", cn_def: "对发生在特定时间和地点的个人经历的记忆。", hint: "‘人生连续剧’。记得你十六岁生日那天吃了什么蛋糕。" },
+                { term: "Semantic memory", cn: "语义记忆", en_def: "Network of associated facts and concepts that make up our general knowledge of the world.", cn_def: "有关世界的通用知识、事实和概念的记忆。", hint: "‘精神百科全书’。知道企鹅是鸟类，但不必记得是在哪儿学到这个知识的。" },
+                { term: "Implicit memory", cn: "内隐记忆", en_def: "Retention independent of conscious recollection.", cn_def: "无需意识参与即可保留和提取的程序性记忆。", hint: "‘手感’。骑自行车、盲打键盘。只要一上手，肌肉自己就知道该怎么动。" },
+                { term: "Procedural memory", cn: "程序性记忆", en_def: "The gradual acquisition of skills as a result of practice, or 'knowing how' to do things.", cn_def: "通过练习获得的技能记忆，即‘知道如何做’。", hint: "‘身体的记忆’。游泳、系鞋带。你不需要每一步都停下来想。" },
+                { term: "Prospective memory", cn: "前瞻性记忆", en_def: "Remembering to do something in the future.", cn_def: "记得在未来某个时间去做某事。", hint: "‘提醒事项’。出门前记得下午三点要去取包裹。" },
+                { term: "Long-term potentiation (LTP)", cn: "长时程增强", en_def: "An increase in a synapse's firing potential after brief, rapid stimulation.", cn_def: "突触传递效率持久增加的现象。", hint: "‘熟能生巧’的神经基础。这是记忆的‘物理刻痕’。" },
+                { term: "Working memory", cn: "工作记忆", en_def: "A newer understanding of short-term memory that focuses on conscious, active processing.", cn_def: "对短期存储中信息进行主动处理和维持的过程。", hint: "大脑的‘桌面’。你正在口算时存放中间数字的地方。" },
+                { term: "Central executive", cn: "中央执行系统", en_def: "Part of Alan Baddeley's model of working memory that directs attention and processing.", cn_def: "工作记忆模型中负责指挥注意力和处理的部分。", hint: "工作记忆的‘总管’。决定把注意力分配给听到的声音还是看到的文字。" },
+                { term: "Phonological loop", cn: "语音环路", en_def: "The part of working memory that holds and processes verbal and auditory information.", cn_def: "工作记忆中处理语言和听觉信息的部分。", hint: "‘精神复读机’。为了记住电话号码，你在心里不停地默读。" },
+                { term: "Visuospatial sketchpad", cn: "视空间写字板", en_def: "The part of working memory that holds and processes visual and spatial information.", cn_def: "工作记忆中处理视觉和空间信息的部分。", hint: "‘精神草稿纸’。在脑子里想象一下你家客厅的布局。" },
+                { term: "Multi-store memory model", cn: "多重存储记忆模型", en_def: "Model consisting of three stores: sensory, short-term, and long-term.", cn_def: "由感觉、短期和长期三种存储组成的模式。", hint: "Atkinson-Shiffrin模型。信息像过三道岗哨才能成为永久记忆。" },
+                { term: "Sensory memory", cn: "感觉记忆", en_def: "The immediate, very brief recording of sensory information.", cn_def: "感官信息的瞬时记录。", hint: "‘余光/余音’。刚关掉灯，眼前还有个残影。" },
+                { term: "Iconic memory", cn: "图像记忆", en_def: "A momentary sensory memory of visual stimuli.", cn_def: "视觉刺激的瞬时感觉记忆。", hint: "‘视觉照片’。持续不到一秒钟的视觉残留。" },
+                { term: "Echoic memory", cn: "声像记忆", en_def: "A momentary sensory memory of auditory stimuli.", cn_def: "听觉刺激的瞬时感觉记忆。", hint: "‘回声’。如果你走神了，老师问你‘我刚才说什么’，你脑子里还能捕捉到最后几个词的回响。" },
+                { term: "Short-term memory", cn: "短期记忆", en_def: "Activated memory that holds a few items briefly.", cn_def: "短暂保存少量信息的激活记忆。", hint: "‘7±2规律’。一般人也就只能记住7个左右的无关数字。" },
+                { term: "Long-term memory", cn: "长期记忆", en_def: "The relatively permanent and limitless storehouse of the memory system.", cn_def: "相对永久且无限的记忆仓库。", hint: "‘终极硬盘’。存了一辈子的技能和故事。" },
+                { term: "Automatic processing", cn: "自动化加工", en_def: "Unconscious encoding of incidental information.", cn_def: "对附带信息的无意识编码。", hint: "‘不费脑子’。你不需要刻意记，也知道今天下午在哪儿见过你的老师。" },
+                { term: "Effortful processing", cn: "精细加工/费力加工", en_def: "Encoding that requires attention and conscious effort.", cn_def: "需要注意和有意识努力的编码过程。", hint: "‘死记硬背’。为了考试背公式，必须得全身贯注。" },
+                { term: "Encoding", cn: "编码", en_def: "The processing of information into the memory system.", cn_def: "将信息处理并存入记忆系统的过程。", hint: "‘输入电脑’。把现实中的光影声带转换成脑子能懂的代码。" },
+                { term: "Storage", cn: "存储", en_def: "The retention of encoded information over time.", cn_def: "随时间保留编码信息的过程。", hint: "‘保存文件’。确保存进去的东西没被删掉。" },
+                { term: "Retrieval", cn: "提取", en_def: "The process of getting information out of memory storage.", cn_def: "从记忆存储中取出信息的过程。", hint: "‘打开文件’。考试时把背过的知识从脑海里调出来。" },
+                { term: "Shallow processing", cn: "浅层加工", en_def: "Encoding on a basic level based on the structure or appearance of words.", cn_def: "基于单词结构或外观的基本编码。", hint: "‘看个热闹’。只记得这个词是大写的，但不知道啥意思。" },
+                { term: "Structural processing", cn: "结构加工", en_def: "Encoding based on the physical structure of a stimulus.", cn_def: "基于刺激物理结构的编码。", hint: "浅层加工的一种。比如：‘这个词是六个字母组成的吗？’" },
+                { term: "Phonemic processing", cn: "音韵加工", en_def: "Encoding based on the sound of words.", cn_def: "基于单词发音的编码。", hint: "中层加工。比如：‘这个词和“猫”押韵吗？’" },
+                { term: "Semantic processing", cn: "语义加工", en_def: "Encoding based on the meaning of words.", cn_def: "基于单词含义的编码。", hint: "深层加工。只有理解了意思，才能记的最牢。" },
+
+                // Topic 2.4: Encoding Memories
+                { term: "Mnemonic devices", cn: "助记术", en_def: "Memory aids, especially those techniques that use vivid imagery and organizational devices.", cn_def: "记忆辅助手段，特别是使用生动图像和组织策略的技术。", hint: "‘背诵口诀’。比如把一长串数字编成一个有趣的故事。" },
+                { term: "Method of loci", cn: "地点法/记忆宫殿", en_def: "A strategy of memory enhancement which uses visualizations of familiar spatial environments in order to enhance the recall of information.", cn_def: "一种通过在脑海中走过熟悉空间并将信息‘放置’在特定位置来辅助记忆的方法。", hint: "‘记忆宫殿’。想象你走过自家客厅，电视机上放着你要背的第一个单词。" },
+                { term: "Chunking", cn: "组块化", en_def: "Organizing items into familiar, manageable units; often occurs automatically.", cn_def: "将项目组织成熟悉的、可管理的单元。", hint: "‘分段记忆’。记电话号码时138-xxxx-xxxx比一大串数字好记多了。" },
+                { term: "Categories", cn: "类别", en_def: "Mental groupings of similar objects, events, ideas, or people.", cn_def: "对相似物体、事件、想法或人的心理分组。", hint: "‘物以类聚’。把名词按动植物分类以便记忆。" },
+                { term: "Hierarchies", cn: "层级结构", en_def: "Complex information broken down into broad concepts and further subdivided into categories and subcategories.", cn_def: "将复杂信息分解为宽泛概念并进一步细分为类别和子类。", hint: "‘组织架构图’。从大门类到小细节，层层递进。" },
+                { term: "Spacing effect", cn: "间歇效应", en_def: "The tendency for distributed study or practice to yield better long-term retention.", cn_def: "分散学习比集中练习能产生更好的长期记忆保留。", hint: "‘细水长流’。每天学半小时，效果远好于考前突击10小时。" },
+                { term: "Massed practice", cn: "集中练习", en_def: "Cramming information all at once.", cn_def: "在短时间内大量塞入信息，即临阵磨枪。", hint: "‘考前突击’。虽然能应付明早的考试，但考完由于忘得极快。" },
+                { term: "Distributed practice", cn: "分散练习", en_def: "Spreading out study over long periods of time.", cn_def: "将学习任务分摊到较长的一段时间内。", hint: "‘拉长战线’。是间歇效应的实践方式，能让记忆更稳固。" },
+                { term: "Serial position effect", cn: "序列位置效应", en_def: "Tendency to recall best the last and first items in a list.", cn_def: "倾向于最好地回忆起列表开头和结尾的项目。", hint: "‘两头尖尖’。背单词书，永远只记得第一个（Abandon）和最后一个。" },
+                { term: "Primacy effect", cn: "首因效应", en_def: "Better recall for items at the beginning of a list.", cn_def: "对列表开头项的记忆力更好。", hint: "‘第一印象’。序列位置效应的前半部分。因为开头的信息有更多时间进行进修性复述。" },
+                { term: "Recency effect", cn: "近因效应", en_def: "Better recall for items at the end of a list.", cn_def: "对列表末尾项的记忆力更好。", hint: "‘记忆犹新’。序列位置效应的后半部分。因为它们还在你的短期记忆里热乎着。" },
+
+                // Topic 2.5: Storing Memories
+                { term: "Maintenance rehearsal", cn: "维持性复述", en_def: "Directly repeating information in order to maintain it in short-term memory.", cn_def: "为了将信息留在短期记忆中而不断重复的过程。", hint: "‘死记硬背’。单纯地在嘴里念叨‘123, 123...’，一旦停下可能就忘了。" },
+                { term: "Elaborative rehearsal", cn: "精细复述", en_def: "Linking new information to things that are already known.", cn_def: "将新信息与已知信息建立联系的过程。", hint: "‘联想记忆’。把新学的概念和你的生活经历结合起来，记得最深。" },
+                { term: "Highly superior autobiographical memory", cn: "超强自传体记忆", en_def: "An exceptional ability to remember nearly every event from one's life.", cn_def: "能够记住生命中几乎每一个事件的非凡能力。", hint: "‘行走的日记本’。这种人能清楚记得十年前的今天天气如何、吃了什么。" },
+                { term: "Retrograde amnesia", cn: "逆行性遗忘", en_def: "The loss of past memories.", cn_def: "丧失对过去发生事件的记忆。", hint: "‘忘了过去’。电影里的失忆主角通常是这种，不认得家人，不记得自己是谁。" },
+                { term: "Anterograde amnesia", cn: "顺行性遗忘", en_def: "The inability to form new memories.", cn_def: "无法形成新的记忆。", hint: "‘没有未来’。由于海马体受损，你永远活在当下，记不住五分钟前见过谁。" },
+                { term: "Alzheimer's disease", cn: "阿尔茨海默病", en_def: "A progressive disease that destroys memory and other important mental functions.", cn_def: "一种逐渐破坏记忆和其他重要心理功能的进展性疾病。", hint: "‘大脑的橡皮擦’。从遗忘近期小事开始，最终波及人格和生命功能。" },
+                { term: "Infantile amnesia", cn: "婴儿期遗忘", en_def: "The inability of adults to retrieve episodic memories before the age of 2–4 years.", cn_def: "成年人无法回忆起2-4岁以前经历的现象。", hint: "‘断层的童年’。因为那时候大脑海马体还没发育好，也没学会用语言编码。" },
+
+                // Topic 2.6: Retrieving Memories
+                { term: "Recall", cn: "回忆", en_def: "Retrieving information that is not currently in your conscious awareness but that was learned at an earlier time.", cn_def: "提取当前不在意识中但以前学过的信息。", hint: "‘简答题’。没有任何提示，直接在脑子里搜寻答案。" },
+                { term: "Recognition", cn: "再认", en_def: "Identifying items previously learned.", cn_def: "识别出以前学过的项目。", hint: "‘选择题’。你不需要背出答案，只要在选项里把它挑出来就行。" },
+                { term: "Context-dependent memory", cn: "情境依赖性记忆", en_def: "The improved recall of specific episodes or information when the context present at encoding and retrieval are the same.", cn_def: "当提取环境与编码环境一致时，记忆效果更好的现象。", hint: "‘回到现场’。在水下学的单词，在水下考效果比在岸上考好。" },
+                { term: "State-dependent memory", cn: "状态依赖性记忆", en_def: "Information learned in one physical or mental state is best recalled when in that same state.", cn_def: "在某种生理或心理状态下学到的信息，在相同状态下最容易提取。", hint: "‘情绪共鸣’。你难过的时候，总是想起以前那些伤心的往事。" },
+                { term: "Testing effect", cn: "测试效应", en_def: "Enhanced memory after retrieving, rather than simply rereading, information.", cn_def: "提取信息（考试）比单纯重复阅读产生的记忆效果更好。", hint: "‘以考代练’。与其多看十遍书，不如做一套卷子。" },
+                { term: "Metacognition", cn: "元认知", en_def: "Thinking about thinking; awareness and understanding of one's own thought processes.", cn_def: "对认知的认知；对自己思维过程的觉察和理解。", hint: "‘上帝视角’。你知道自己背这篇课文没背熟，这就是在运用元认知。" },
+
+                // Topic 2.7: Forgetting and other Memory Challenges
+                { term: "Forgetting curve", cn: "遗忘曲线", en_def: "Hypothesis that declines in memory retention in time.", cn_def: "描述记忆随时间推移而下降的假设。", hint: "艾宾浩斯曲线。刚学完时忘得最快，后来速度会变慢并趋于稳定。" },
+                { term: "Encoding failure", cn: "编码失败", en_def: "The brain's occasional failure to create a memory link.", cn_def: "大脑偶尔未能建立记忆链接的现象。", hint: "‘压根儿没存进去’。你天天见一元硬币，但让你画出上面的细节你画不出，因为你从来没有仔细编码过这些细节。" },
+                { term: "Proactive interference", cn: "前摄干扰", en_def: "The forward-acting disruptive effect of prior learning on the recall of new information.", cn_def: "旧的信息干扰了对新信息的提取。", hint: "‘换了新手机号，开口背出来的还是旧的’。" },
+                { term: "Retroactive interference", cn: "倒摄干扰", en_def: "The backward-acting disruptive effect of new learning on the recall of old information.", cn_def: "新的学习干扰了对旧信息的提取。", hint: "‘刚学了法语，连最简单的英语单词怎么拼都忘了’。" },
+                { term: "Tip-of-the-tongue phenomenon", cn: "话到嘴边现象", en_def: "Failing to retrieve a word from memory, combined with partial recall and the feeling that retrieval is imminent.", cn_def: "未能从记忆中提取出某个词，但感觉马上就能想起来。", hint: "‘舌尖现象’。知道那个词大概长什么样，但就是吐不出来。" },
+                { term: "Repression", cn: "压抑", en_def: "The basic defense mechanism that banishes from consciousness anxiety-arousing thoughts, feelings, and memories.", cn_def: "防止引起焦虑的想法和记忆进入意识的防御机制。", hint: "‘选择性遗忘’。弗洛伊德认为，我们会为了保护自己而故意‘忘记’极度痛苦的创伤。" },
+                { term: "Misinformation effect", cn: "误导信息效应", en_def: "Incorporating misleading information into one's memory of an event.", cn_def: "将误导性信息纳入对某一事件记忆的现象。", hint: "‘被带偏了’。有人问你‘撞碎的玻璃在哪儿？’，即使现场根本没碎玻璃，你也会在几周后‘记起’有碎玻璃。" },
+                { term: "Source amnesia", cn: "来源遗忘", en_def: "Attributing to the wrong source an event we have experienced, heard about, read about, or imagined.", cn_def: "将经历过或听说过的事情记错了来源。", hint: "‘似曾相识’。你以为是自己亲身经历的，其实可能只是小时候看过的一个电影片段。" },
+                { term: "Constructive memory", cn: "建构性记忆", en_def: "Memory that has been simplified, enriched, or distorted, depending on an individual's experiences and attitudes.", cn_def: "根据个人经验和态度而被简化、丰富或扭曲的记忆。", hint: "‘记忆是加工出来的’。我们不是在播放录像带，而是在根据线索重新拼凑故事。" },
+                { term: "Memory consolidation", cn: "记忆巩固", en_def: "The neural storage of a long-term memory.", cn_def: "将短期记忆转化为长期记忆的神经过程。", hint: "‘固化’。睡眠在这个过程中至关重要，它能帮我们将白天的经历‘刻’进脑子里。" },
+                { term: "Imagination inflation", cn: "想象膨胀", en_def: "The finding that imagining an event which never happened can increase confidence that it actually occurred.", cn_def: "想象从未发生的事件会增加认为其真实发生过的信心的现象。", hint: "‘想多了就成真了’。你越是详细地想象自己小时候被蛇咬过，你就越可能真的相信这事发生过。" },
+
+                // Topic 2.8: Intelligence and Achievement
+                { term: "General intelligence g", cn: "一般智力g因素", en_def: "A general intelligence factor that, according to Spearman and others, underlies specific mental abilities.", cn_def: "斯皮尔曼认为的潜伏在特定智力能力之下的基本智力因素。", hint: "‘智力的内核’。如果你数学好，往往语文也不差，就是因为g因素在起作用。" },
+                { term: "Intelligence quotient IQ", cn: "智商IQ", en_def: "Defined originally as the ratio of mental age (ma) to chronological age (ca) multiplied by 100.", cn_def: "最初定义为心理年龄与生理年龄之比再乘以100。", hint: "10岁孩子有12岁的心智，他的IQ就是120。" },
+                { term: "Psychometrics", cn: "心理测量学", en_def: "The scientific study of the measurement of human abilities, attitudes, and traits.", cn_def: "研究人类能力、态度和特质测量的科学学科。", hint: "‘心理秤’。设计各种量表和测试来量化看不见摸不着的心理品质。" },
+                { term: "Standardized", cn: "标准化", en_def: "Defining uniform testing procedures and meaningful scores by comparison with the performance of a pretested group.", cn_def: "通过与预试组的表现进行比较来定义统一的测试程序和有意义的分数。", hint: "‘统一标尺’。大家都考同一张卷子，在同一个评分标准下排名。" },
+                { term: "Validity", cn: "效度", en_def: "The extent to which a test measures or predicts what it is supposed to.", cn_def: "测试测量或预测其预定内容的准确程度。", hint: "‘测得准不准’。你要测智力，卷子里全是数学题，那效度就不高。" },
+                { term: "Construct validity", cn: "结构效度", en_def: "The degree to which a test measures what it claims, or purports, to be measuring.", cn_def: "测试在多大程度上真正测量到了它声称要测量的抽象概念。", hint: "‘概念对不对位’。你的测试真的测到‘焦虑’了吗，还是只是测到了‘心跳快’？" },
+                { term: "Predictive validity", cn: "预测效度", en_def: "The success with which a test predicts the behavior it is designed to predict.", cn_def: "测试成功预测其设计要预测的行为的程度。", hint: "‘预言的准度’。高考分数如果能准确预测大学成绩，那它就有很高的预测效度。" },
+                { term: "Reliability", cn: "信度", en_def: "The extent to which a test yields consistent results.", cn_def: "测试产生一致结果的程度。", hint: "‘稳定性’。你今天测IQ是120，明天测变80了，那这测试就完全不可信。" },
+                { term: "Test-retest reliability", cn: "重测信度", en_def: "The consistency of scores when the same test is administered to the same people at different times.", cn_def: "同一个人两次参加同一个测试结果是否一致。", hint: "‘前后一致’。证明测试结果不是随缘出的。" },
+                { term: "Split-half reliability", cn: "分半信度", en_def: "The degree to which all components of an assessment contribute equally to its measurement.", cn_def: "测试的两半部分（如奇数题和偶数题）结果是否一致。", hint: "‘内部一致’。同一个卷子，如果是这两半得分差太多，说明有些题目可能偏了。" },
+                { term: "Stereotype threat", cn: "刻板印象威胁", en_def: "A self-confirming concern that one will be evaluated based on a negative stereotype.", cn_def: "担心自己会被基于负面刻板印象来评价的自我确认式焦虑。", hint: "‘顾虑重重’。如果考试前有人强调‘女性数学不好’，参加考试的女性可能因为紧张而发挥失常。" },
+                { term: "Stereotype lift", cn: "刻板印象提升", en_def: "A performance boost that occurs when people are exposed to negative stereotypes about another group.", cn_def: "当人们接触到关于其他团体的负面刻板印象时，自身表现提升的现象。", hint: "‘对手被贬低后的心理优势’。如果你听说‘外校学生很弱’，你可能在比赛中表现得更自信。" },
+                { term: "Flynn effect", cn: "弗林效应", en_def: "The worldwide phenomenon that shows intelligence test performance has been increasing over the years.", cn_def: "世界范围内智商分数随年代推移而逐年提高的现象。", hint: "‘人类越来越聪明’。现在的孩子平均智商比一百年前高得多（可能是因为教育和营养好了）。" },
+                { term: "Achievement tests", cn: "成就测验", en_def: "Tests designed to assess what a person has learned.", cn_def: "旨在评估一个人已经学到了什么的测试。", hint: "‘期末考’。考查你对这学期知识的掌握情况。" },
+                { term: "Aptitude tests", cn: "能力倾向测验", en_def: "Tests designed to predict a person's future performance; aptitude is the capacity to learn.", cn_def: "旨在预测一个人未来表现的测试；考查学习潜能。", hint: "‘天赋测试’。看看你是否具有学习成为飞行员的潜质。" },
+                { term: "Fixed mindset", cn: "固定型思维", en_def: "The belief that basic qualities, like intelligence or talent, are fixed traits.", cn_def: "认为智力等基本素质是天生固定、无法改变的倾向。", hint: "‘天注定’。遇到挫折会觉得‘我不行，我没这个命’。" },
+                { term: "Growth mindset", cn: "成长型思维", en_def: "The belief that basic qualities can be developed through dedication and hard work.", cn_def: "认为通过努力和坚持可以提升基本素质的倾向。", hint: "‘潜力无限’。觉得失败只是学习的机会，我还没掌握，以后会好的。" },
+                { term: "Mental age", cn: "心理年龄", en_def: "A measure of intelligence test performance devised by Binet; the chronological age that most typically corresponds to a given level of performance.", cn_def: "比奈提出的智力衡量标准；特定表现水平所对应的典型年龄。", hint: "一个5岁小孩能做对8岁孩子平均水平的题，他的心理年龄就是8。" },
+            ],
+            "Unit 3: Learning & Development": [
+                // --- LEARNING (Topics 3.7 - 3.9) ---
+                { term: "Acquisition", cn: "获得", en_def: "The initial stage of learning where a neutral stimulus is paired with an unconditioned stimulus.", cn_def: "学习的初始阶段，将中性刺激与非条件刺激联系起来。", hint: "狗狗第一次听到铃声就有肉吃的那个转折点。" },
+                { term: "Unconditioned stimulus (UCS)", cn: "非条件刺激", en_def: "A stimulus that naturally triggers a response.", cn_def: "自然诱发反应的刺激。", hint: "看到红烧肉自然流口水。肉就是UCS。" },
+                { term: "Unconditioned response (UCR)", cn: "非条件反应", en_def: "An unlearned, naturally occurring response.", cn_def: "自然发生的本能反应。", hint: "看到肉流口水，流口水就是UCR。" },
+                { term: "Conditioned stimulus (CS)", cn: "条件刺激", en_def: "A previously neutral stimulus that, after association with an UCS, comes to trigger a conditioned response.", cn_def: "以前中性，现在能诱发反应的刺激。", hint: "现在的铃声。" },
+                { term: "Conditioned response (CR)", cn: "条件反应", en_def: "A learned response to a previously neutral stimulus.", cn_def: "对以前中性的刺激产生的学习反应。", hint: "现在听到铃声流口水。" },
+                { term: "Extinction", cn: "消退", en_def: "The diminishing of a conditioned response.", cn_def: "条件反应逐渐减弱。", hint: "铃声响了多次都没肉吃，狗就不流口水了。" },
+                { term: "Spontaneous recovery", cn: "自发恢复", en_def: "The reappearance of a weakened conditioned response after a rest period.", cn_def: "休息一段时间后，消退的反应突然再次出现。", hint: "消失的口水又回来了。" },
+                { term: "Discrimination (Classical)", cn: "辨别（经典条件反射）", en_def: "The learned ability to distinguish between a conditioned stimulus and stimuli that do not signal an unconditioned stimulus.", cn_def: "区分CS和其他无关刺激的能力。", hint: "区分小铃铛和大铜钟的声音。" },
+                { term: "Generalization (Classical)", cn: "泛化（经典条件反射）", en_def: "The tendency for stimuli similar to the conditioned stimulus to elicit similar responses.", cn_def: "对类似CS的刺激也产生类似的反应。", hint: "对所有圆形的物体都感到害怕。" },
+                { term: "Higher-order conditioning", cn: "高阶条件反射", en_def: "A procedure in which the conditioned stimulus is paired with a new neutral stimulus, creating a second (often weaker) conditioned stimulus.", cn_def: "把已有的CS和新的中性刺激联系起来。", hint: "铃声之后亮个灯，灯也能让狗流口水。" },
+                { term: "Taste aversion", cn: "味觉厌恶", en_def: "A conditioned dislike for a particular food.", cn_def: "对某种食物产生的条件性厌恶。", hint: "吃完海鲜拉肚子，以后闻到海鲜味就恶心。" },
+                { term: "One-trial conditioning", cn: "一次性条件反射", en_def: "A form of learning that occurs after only a single pairing of a stimulus and a response.", cn_def: "只需一次尝试就学会的联想。", hint: "比如剧烈的食物中毒。" },
+                { term: "Biological preparedness", cn: "生物性预知", en_def: "A propensity for learning particular associations.", cn_def: "学习某些联想的天然倾向。", hint: "人类天生更容易害怕蛇，而不是害怕电源插座。" },
+                { term: "Habituation", cn: "习惯化", en_def: "Decreasing responsiveness with repeated stimulation.", cn_def: "对重复刺激反应减弱。", hint: "刚穿衣服觉得紧，过一会儿就没感觉了。" },
+                { term: "Law of Effect", cn: "效果律", en_def: "Thorndike's principle that behaviors followed by favorable consequences become more likely.", cn_def: "产生好结果的行为更有可能再次发生。", hint: "桑代克的猫。做对了就有奖，下次还会做。" },
+                { term: "Positive reinforcement", cn: "正强化", en_def: "Increasing behaviors by presenting positive reinforcers.", cn_def: "通过给予奖励来增加某种行为出现的频率。", hint: "考100分给零花钱。" },
+                { term: "Negative reinforcement", cn: "负强化", en_def: "Increasing behaviors by stopping or reducing negative stimuli.", cn_def: "通过移除或减少负面刺激（如免除家务）来增加行为。", hint: "写完作业就不用洗碗了。" },
+                { term: "Positive punishment", cn: "正惩罚", en_def: "Administering an aversive stimulus to decrease behavior.", cn_def: "通过施加厌恶刺激来减少行为。", hint: "闯红灯扣分。" },
+                { term: "Negative punishment", cn: "负惩罚", en_def: "Withdrawing a rewarding stimulus to decrease behavior.", cn_def: "通过移除愉快刺激来减少行为。", hint: "玩电脑太晚，没收手机。" },
+                { term: "Primary reinforcer", cn: "初级强化物", en_def: "An innately reinforcing stimulus.", cn_def: "天生就有强化作用的刺激。", hint: "食物、水、舒服的温度。" },
+                { term: "Secondary reinforcer", cn: "次级强化物", en_def: "A stimulus that gains its power through association with a primary reinforcer.", cn_def: "通过与初级强化物联系而获得权力的刺激。", hint: "钱。钱本身不能吃，但能换吃的。" },
+                { term: "Discrimination (Operant)", cn: "辨别（操作性）", en_def: "Learning that certain responses, but not others, will be reinforced.", cn_def: "学习只有在特定情景下才有奖励。", hint: "只在妈妈高兴时要礼物。" },
+                { term: "Generalization (Operant)", cn: "泛化（操作性）", en_def: "When a behavior reinforced in one situation occurs in other similar situations.", cn_def: "在类似情景下也做同样的行为。", hint: "在家刷牙得表扬，去奶奶家也刷牙。" },
+                { term: "Shaping", cn: "塑造", en_def: "An operant conditioning procedure in which reinforcers guide behavior toward closer and closer approximations of the desired behavior.", cn_def: "逐步引导行为达到目标的过程。", hint: "训海豚钻圈。先让它靠近圈，再让它浮出水面，最后钻过去。" },
+                { term: "Successive approximations", cn: "连续接近", en_def: "Rewards for behaviors that increasingly resemble the goal behavior.", cn_def: "对越来越接近目标的行为给予奖励。", hint: "塑造的具体每一步。" },
+                { term: "Instinctual drift", cn: "本能漂移", en_def: "The tendency of animals to revert to instinctive behaviors.", cn_def: "动物回到本能行为的倾向。", hint: "浣熊学着投币，结果开始像在水里洗东西一样搓硬币。" },
+                { term: "Learned helplessness", cn: "习得性无助", en_def: "The hopelessness and passive resignation an animal or human learns when unable to avoid repeated aversive events.", cn_def: "无法逃脱困难后的绝望和放弃。", hint: "考多少次都不及格，最后干脆不学了。" },
+                { term: "Continuous reinforcement", cn: "连续强化", en_def: "Reinforcing the desired response every time it occurs.", cn_def: "每次做对都给奖。", hint: "学习新技能最快，但也最容易消退。" },
+                { term: "Partial reinforcement", cn: "部分强化", en_def: "Reinforcing a response only part of the time.", cn_def: "偶尔给奖。", hint: "赌博。不容易消退。" },
+                { term: "Fixed interval schedule", cn: "固定时距程序", en_def: "Reinforces a response only after a specified time has elapsed.", cn_def: "定时给奖。", hint: "每季度领一次奖金。到了发钱前几天最积极。" },
+                { term: "Variable interval schedule", cn: "变动时距程序", en_def: "Reinforces a response at unpredictable time intervals.", cn_def: "不定时给奖。", hint: "抽查。你不知道老师什么时候来，所以得一直盯着。" },
+                { term: "Fixed ratio schedule", cn: "固定比率程序", en_def: "Reinforces a response only after a specified number of responses.", cn_def: "做满一定次数给奖。", hint: "计件工资。完成10件得100块。" },
+                { term: "Variable ratio schedule", cn: "变动比率程序", en_def: "Reinforces a response after an unpredictable number of responses.", cn_def: "次数随机。", hint: "老虎机。最具成瘾性。" },
+                { term: "Social learning", cn: "社会学习理论", en_def: "Learning by observing others.", cn_def: "通过观察他人来学习。", hint: "班杜拉的波波玩偶实验。大人打玩偶，小孩也跟着打。" },
+                { term: "Vicarious conditioning", cn: "替代性条件反射", en_def: "Conditioning of a reflex response or emotion by watching the reaction of another person to a stimulus.", cn_def: "通过观察他人对刺激的反应而产生的条件反射。", hint: "看到朋友吃柠檬酸得龇牙咧嘴，你也分泌口水。" },
+                { term: "Prosocial behavior", cn: "亲社会行为", en_def: "Positive, constructive, helpful behavior.", cn_def: "积极助人的行为。", hint: "乐于助人、捐款、模仿英雄行为。" },
+                { term: "Antisocial behavior", cn: "反社会行为", en_def: "Negative, destructive, unhelpful behavior.", cn_def: "有害的行为。", hint: "暴力倾向、霸凌模仿。" },
+                { term: "Insight learning", cn: "洞察学习", en_def: "A sudden realization of a problem's solution.", cn_def: "突然想到答案。", hint: "顿悟。猩猩够不到香蕉，突然把两根棍子连在一起。" },
+                { term: "Latent learning", cn: "潜伏学习", en_def: "Learning that occurs but is not apparent until there is an incentive to demonstrate it.", cn_def: "学到了但没显露，直到有奖励才表现出来。", hint: "托尔曼的迷宫实验。老鼠平时就在乱逛，有了奶酪突然跑得飞快。" },
+                { term: "Cognitive map", cn: "认知地图", en_def: "A mental representation of the layout of one's environment.", cn_def: "大脑里的路线图。", hint: "即使闭上眼，你也能在自己家里走到厨房。" },
+
+                // --- DEVELOPMENT (Topics 3.1 - 3.6) ---
+                { term: "Nature vs. Nurture", cn: "天性与教养", en_def: "The debate over the relative contribution of genetics vs. environment.", cn_def: "关于遗传与环境对个体发展影响相对大小的争论。", hint: "‘天生如此’还是‘后天培养’？" },
+                { term: "Continuous stages of development", cn: "连续发展观", en_def: "Development as a cumulative process, gradually improving on existing skills.", cn_def: "认为发展是一个累积的过程，技能在原有基础上逐渐提高。", hint: "像树木生长，慢慢变高。" },
+                { term: "Discontinuous stages of development", cn: "非连续发展观", en_def: "Development takes place in unique stages, occurring at specific times or ages.", cn_def: "认为发展是分阶段跳跃式的，在特定年龄发生质变。", hint: "像蝴蝶蜕变，从幼虫到蛹再到成虫。" },
+                { term: "Longitudinal study", cn: "纵向研究", en_def: "Research in which the same people are restudied and retested over a long period.", cn_def: "在较长时间内对同一组人进行追踪研究。", hint: "跟踪同一个人从5岁到50岁。" },
+                { term: "Cross-sectional study", cn: "横断面研究", en_def: "A study in which people of different ages are compared with one another.", cn_def: "在同一时间对不同年龄组的人进行比较研究。", hint: "同时找一群5岁、10岁和20岁的人来对比。" },
+                { term: "Teratogens", cn: "致畸因子", en_def: "Agents (chemicals, viruses) that can harm an embryo.", cn_def: "在胚胎发育过程中能造成异常或畸形的有害物质。", hint: "酒精、药物等‘恶魔因子’。" },
+                { term: "Fine motor coordination", cn: "精细动作协调", en_def: "Coordination of small muscles, in movements—usually involving the synchronization of hands and fingers.", cn_def: "小肌肉群的动作协调，通常涉及手指和手的同步。", hint: "‘绣花针功夫’。写字、扣纽扣。" },
+                { term: "Gross motor coordination", cn: "粗大动作协调", en_def: "Coordination of large muscles, like arms and legs.", cn_def: "大肌肉群的协调，如手臂和腿部。", hint: "‘大开大合’。跑步、跳跃、爬行。" },
+                { term: "Maturation", cn: "成熟", en_def: "Biological growth processes that enable orderly changes in behavior.", cn_def: "驱动行为有序变化的生物生长过程。", hint: "天生自带的‘发育时间表’，不受环境影响（比如几月会爬）。" },
+                { term: "Rooting reflex", cn: "觅食反射", en_def: "A baby's tendency, when touched on the cheek, to turn toward the touch and open the mouth.", cn_def: "当婴儿面颊被触碰时，会自动转头并张嘴寻找乳头的反射。", hint: "生存本能，像自动寻路的雷达。" },
+                { term: "Visual cliff", cn: "视觉悬崖", en_def: "A laboratory device for testing depth perception in infants.", cn_def: "用于测试婴儿深度知觉的实验室装置。", hint: "铺着格子的玻璃台，测试宝宝敢不敢爬过‘悬崖’。" },
+                { term: "Critical period", cn: "关键期", en_def: "An optimal period early in life when exposure to certain stimuli produces normal development.", cn_def: "生命早期的一个最佳时期，此时接触某些刺激对正常发育至关重要。", hint: "‘过了这村没这店’。如果此时没学，后面很难补救。" },
+                { term: "Sensitive period", cn: "敏感期", en_def: "A time when a particular type of development is most likely, although it may still happen later.", cn_def: "某种发展最容易发生的时期，但晚一些也有可能发生。", hint: "比关键期更灵活一些，比如学习第二语言。" },
+                { term: "Imprinting", cn: "印刻", en_def: "The process by which certain animals form strong attachments during an early-life critical period.", cn_def: "某些动物在生命早期的关键期形成的强烈依恋。", hint: "刚出生的小鸭子会跟着它看到的第一个移动物体（比如劳伦兹）。" },
+                { term: "Menarche", cn: "月经初潮", en_def: "The first menstrual period.", cn_def: "女性初次月经。", hint: "青春期发育的重要标志。" },
+                { term: "Spermarche", cn: "精子初现", en_def: "The first ejaculation.", cn_def: "男性初次射精。", hint: "男性青春期发育的标志。" },
+                { term: "Menopause", cn: "绝经/更年期", en_def: "The time of natural cessation of menstruation.", cn_def: "月经自然停止的时期。", hint: "女性生殖能力的结束。" },
+                { term: "Sexual orientation", cn: "性取向", en_def: "An enduring sexual attraction toward members of one's own sex, the other sex, or both sexes.", cn_def: "对他人的持久性情感、浪漫或性吸引力。", hint: "异性恋、同性恋、双性恋等。" },
+                { term: "Sensorimotor stage", cn: "感知运动阶段", en_def: "Piaget's 1st stage; babies know the world through senses and motor activities.", cn_def: "皮亚杰第一阶段（0-2岁）；婴儿通过感官和动作认识世界。", hint: "‘手口并用’。拿到什么都想抓一下、啃一口。" },
+                { term: "Object permanence", cn: "客体永久性", en_def: "Awareness that things continue to exist even when not perceived.", cn_def: "意识到事物即使不在视线内也依然存在的认知能力。", hint: "如果不具备这个，藏起玩具宝宝就觉得玩具消失了。" },
+                { term: "Preoperational stage", cn: "前运算阶段", en_def: "Piaget's 2nd stage; language development but no logical operations.", cn_def: "皮亚杰第二阶段（2-7岁）；有语言但缺乏逻辑运算。", hint: "有想象力，但会认为月亮也在跟着他走。" },
+                { term: "Conservation", cn: "守恒意识", en_def: "Properties like volume remain the same despite changes in form.", cn_def: "明白物体的物理属性不随形态改变而改变的能力。", hint: "宽杯子和高杯子的水量其实一样。" },
+                { term: "Egocentrism", cn: "自我中心", en_def: "Inability to see the world from others' perspective.", cn_def: "无法从他人的角度看世界的倾向。", hint: "‘遮住眼你就看不见我’。以为我知道的你肯定也知道。" },
+                { term: "Animism", cn: "泛灵论", en_def: "Belief that inanimate objects have lifelike qualities.", cn_def: "认为无生命物体也具有生命特征的信念。", hint: "‘洋娃娃也会疼’。给小熊盖被子。" },
+                { term: "Theory of Mind", cn: "心理理论", en_def: "Ability to reason about the mental states of others.", cn_def: "能够理解和推理他人内心想法、情绪和意图的能力。", hint: "开始明白‘你可能不知道我知道什么’。" },
+                { term: "Concrete operational stage", cn: "具体运算阶段", en_def: "Piaget's 3rd stage; logic develops about concrete events.", cn_def: "皮亚杰第三阶段（7-11岁）；开始对具体事物进行逻辑思考。", hint: "能理解守恒了，但还不太能处理纯抽象的数学公式。" },
+                { term: "Formal operational stage", cn: "形式运算阶段", en_def: "Piaget's 4th stage; abstract reasoning develops.", cn_def: "皮亚杰第四阶段（12岁以上）；发展出抽象推理能力。", hint: "能进行‘如果...那么...’的假设性思考。" },
+                { term: "Scaffolding", cn: "支架式教学", en_def: "Support tailored to current skill level to help child reach next level.", cn_def: "根据孩子当前水平提供的临时支持，帮助其达到更高水平。", hint: "像建筑工地的脚手架，学会了就拆掉。" },
+                { term: "Zone of proximal development", cn: "最近发展区 (ZPD)", en_def: "Gap between what a learner can do alone and with help.", cn_def: "学习者独立完成任务与在他人的帮助下完成任务之间的差距。", hint: "维果茨基提出。‘跳一跳，够得着’的那个区域。" },
+                { term: "Fluid intelligence", cn: "流体智力", en_def: "Ability to reason speedily and abstractly.", cn_def: "快速进行抽象推理和解决新问题的能力。", hint: "反应速度、解谜能力。随年龄增长而下降。" },
+                { term: "Crystallized intelligence", cn: "晶体智力", en_def: "Accumulated knowledge and verbal skills.", cn_def: "积累的知识、经验和语言能力。", hint: "‘资历’。随年龄增长而增加。" },
+                { term: "Dementia", cn: "痴呆/失智症", en_def: "Neurocognitive disorder involving decline in mental ability severe enough to interfere with daily life.", cn_def: "涉及认知能力下降、足以干扰日常生活的神经认知障碍。", hint: "不仅是健忘，更是认知功能的全面衰退。" },
+                { term: "Phoneme", cn: "音素", en_def: "Smallest distinctive sound unit in language.", cn_def: "语言中最小的区分音位的声音单位。", hint: "‘声母韵母’。/b/ /a/ /t/。" },
+                { term: "Morpheme", cn: "词素", en_def: "Smallest unit that carries meaning (e.g., prefix, root).", cn_def: "语言中最小的有意义的单位。", hint: "单词的‘零件’。比如'preview'里的'pre'。" },
+                { term: "Semantics", cn: "语义学", en_def: "The study of meaning in language.", cn_def: "研究语言中意义的规则。", hint: "研究‘这个词到底是什么意思’。" },
+                { term: "Grammar", cn: "语法", en_def: "System of rules that enables communication.", cn_def: "使我们能够沟通的规则体系。", hint: "语言的‘交通规则’。" },
+                { term: "Syntax", cn: "句法", en_def: "Set of rules for combining words into sentences.", cn_def: "在句子中组合词语的规则。", hint: "‘句子成分’。主语后面跟谓语。" },
+                { term: "Cooing", cn: "咕咕声", en_def: "Early stage of language development where infant makes vowel sounds.", cn_def: "语言发展的早期阶段，婴儿发出简单的元音。", hint: "‘喔喔’‘啊啊’。" },
+                { term: "Babbling", cn: "咿呀学语", en_def: "Stage starting at 4 months; infant utters various sounds.", cn_def: "4个月大的婴儿发出各种音节的声音。", hint: "‘哒哒哒’‘爸爸妈妈’（其实还没意识到意思）。" },
+                { term: "One-word speech", cn: "单词语", en_def: "Stage (12 months) where child speaks mostly in single words.", cn_def: "约1岁时，主要用单个词来表达意思。", hint: "‘水’‘抱’。" },
+                { term: "Telegraphic speech", cn: "电报句", en_def: "Early speech stage (2 years) child speaks in simple 2-word sentences.", cn_def: "约2岁时，使用名词+动词的简短句子。", hint: "‘要球球’‘妈妈走’。" },
+                { term: "Overgeneralization (Grammar)", cn: "语法的过度泛化", en_def: "Applying a grammar rule in situations where it doesn't apply (e.g., 'I goed').", cn_def: "在不适用规则的地方强行使用语法规则。", hint: "比如把‘走了’都说成‘去过了’，虽然生硬但说明孩子在学逻辑。" },
+                { term: "Ecological systems theory", cn: "生态系统理论", en_def: "Bronfenbrenner's view of development as occurring within multiple layers of environment.", cn_def: "勃朗芬布伦纳提出，发展发生在该层嵌套的环境中。", hint: "人处在同心圆中心，环境层层包围。" },
+                { term: "Microsystem", cn: "微观系统", en_def: "The immediate environment of the individual (family, peers).", cn_def: "直接影响个体的环境，如家庭和同伴。", hint: "最里圈，每天打交道的人。" },
+                { term: "Mesosystem", cn: "中观系统", en_def: "Connections between microsystems.", cn_def: "不同微观系统之间的联系。", hint: "比如家长和老师的关系。" },
+                { term: "Exosystem", cn: "外观系统", en_def: "Environmental settings that indirectly affect the child.", cn_def: "间接影响孩子的环境设置。", hint: "比如父母的工作单位。" },
+                { term: "Macrosystem", cn: "宏观系统", en_def: "The culture in which individuals live.", cn_def: "个体所处的文化背景。", hint: "法律、价值观、社会风俗。" },
+                { term: "Chronosystem", cn: "时间系统", en_def: "The temporal dimension (time) of the environment.", cn_def: "环境的时间维度。", hint: "比如什么时候搬家，父母什么时候离婚。" },
+                { term: "Self-concept", cn: "自我概念", en_def: "All our thoughts and feelings about ourselves, answering 'Who am I?'.", cn_def: "我们对自身的所有想法和感受。", hint: "我是个什么样的人？" },
+                { term: "Authoritarian parenting style", cn: "专制型教养", en_def: "Strict rules, high control, low responsiveness.", cn_def: "严厉、高控制、低回应。", hint: "‘因为我说了算’。不讲道理，只给命令。" },
+                { term: "Authoritative parenting style", cn: "权威型教养", en_def: "Demanding but responsive; sets rules but explains and listens.", cn_def: "高自控、高回应；制定规则但讲道理。", hint: "‘咱们谈谈’。最理想的教养方式。" },
+                { term: "Permissive parenting style", cn: "放任型教养", en_def: "Few demands, high responsiveness, little discipline.", cn_def: "低要求、高回应、几乎没有管教。", hint: "‘你想干嘛就干嘛’。" },
+                { term: "Secure attachment", cn: "安全型依恋", en_def: "Child explores happily when caregiver is present, shows distress when gone, and is easily comforted upon return.", cn_def: "照料者在时快乐探索，离开时焦虑，回来时易被安抚。", hint: "建立了健康的信任感。" },
+                { term: "Insecure avoidant attachment", cn: "不安全回避型依恋", en_def: "Child ignores caregiver, shows little emotion when they leave or return.", cn_def: "疏远照料者，离开或回来时都没什么反应。", hint: "情感隔离，不再期待被安抚。" },
+                { term: "Insecure anxious attachment", cn: "不安全焦虑型依恋", en_def: "Child is clingy, extremely distressed when caregiver leaves, and may be angry or hard to soothe upon return.", cn_def: "极度黏人，离开时崩溃，回来时愤怒或难以安抚。", hint: "情绪极其矛盾。" },
+                { term: "Insecure disorganized attachment", cn: "不安全紊乱型依恋", en_def: "Child shows inconsistent, confused, or fearful behavior toward caregiver.", cn_def: "行为矛盾、混乱或表现出对照顾者的恐惧。", hint: "通常与虐待或严重的照料不周有关。" },
+                { term: "Temperament", cn: "气质", en_def: "A person's characteristic emotional reactivity and intensity.", cn_def: "个体的生来具有的情绪反应方式和特征。", hint: "‘天生的脾气’。Easy, Difficult, or Slow-to-warm-up。" },
+                { term: "Separation anxiety", cn: "分离焦虑", en_def: "Emotional distress seen in infants when they are separated from people with whom they have formed an attachment.", cn_def: "婴儿与依恋对象分开时产生的焦虑和痛苦。", hint: "妈妈一走就大哭。" },
+                { term: "Adolescent egocentrism", cn: "青少年自我中心", en_def: "Inability to distinguish between one's own perception of what others think about them and what people actually think in reality.", cn_def: "错误地认为别人一直在关注和评价自己。", hint: "把自己当成世界演出的中心。" },
+                { term: "Imaginary audience", cn: "虚拟观众", en_def: "Belief that everyone is watching and judging them.", cn_def: "认为所有人都在注视和评价自己的信念。", hint: "‘天哪，大家一定会嘲笑我的新发型’。" },
+                { term: "Personal fable", cn: "个人寓言", en_def: "Belief that one's experiences are unique and they are invulnerable.", cn_def: "认为自己的经历不仅独特且自己是无敌/不会出事的信念。", hint: "‘这种坏事绝不会发生在我身上’。" },
+                { term: "Social clock", cn: "社会钟", en_def: "Culturally preferred timing of social events such as marriage, parenthood, and retirement.", cn_def: "社会文化对于什么时候结婚、生子、退休的‘默认时间表’。", hint: "‘什么年龄该干什么事’的社会压力。" },
+                { term: "Emerging adulthood", cn: "成年初显期", en_def: "A distinct period of development between adolescence and young adulthood (18-25).", cn_def: "从青少年向成年过渡的一个独特阶段（18-25岁）。", hint: "还在探索，还没完全独立定型。" },
+                { term: "Trust v. Mistrust", cn: "信任对不信任", en_def: "Erikson Stage 1; needs to form a sense of trust with caregivers.", cn_def: "艾里克森第一阶段：建立基本的安全感和信任感。", hint: "生命第一年（0-1岁）。" },
+                { term: "Autonomy v. Shame/Doubt", cn: "自主对羞愧", en_def: "Erikson Stage 2; toddlers learn to exercise will and do things for themselves.", cn_def: "艾里克森第二阶段：学会自理（如如厕训练）并锻炼意志。", hint: "学步期（1-3岁）。" },
+                { term: "Initiative v. Guilt", cn: "主动对内疚", en_def: "Erikson Stage 3; preschoolers learn to initiate tasks and carry out plans.", cn_def: "艾里克森第三阶段：开始设定目标并执行计划。", hint: "学龄前期（3-6岁）。" },
+                { term: "Industry v. Inferiority", cn: "勤奋对自卑", en_def: "Erikson Stage 4; children learn the pleasure of applying themselves to tasks.", cn_def: "艾里克森第四阶段：在学习各种技能中获得胜任感。", hint: "学龄期（6-12岁）。" },
+                { term: "Identity v. Role Confusion", cn: "同一性对角色混乱", en_def: "Erikson Stage 5; teens work at refining a sense of self.", cn_def: "艾里克森第五阶段：弄清楚‘我是谁’的问题。", hint: "青少年期（12-18岁）。" },
+                { term: "Intimacy v. Isolation", cn: "亲密对孤独", en_def: "Erikson Stage 6; struggle to form close relationships and to gain the capacity for intimate love.", cn_def: "艾里克森第六阶段：寻求亲密关系与爱。", hint: "成年早期（20s-40s）。" },
+                { term: "Generativity v. Stagnation", cn: "繁殖对停滞", en_def: "Erikson Stage 7; discover a sense of contributing to the world (family or work).", cn_def: "艾里克森第七阶段：做出贡献，抚养后代或创造价值。", hint: "成年中期（40s-60s）。" },
+                { term: "Integrity v. Despair", cn: "完善对绝望", en_def: "Erikson Stage 8; reflecting on life, feeling a sense of satisfaction or failure.", cn_def: "艾里克森第八阶段：回顾一生，感到无憾还是后悔。", hint: "成年晚期（60岁以上）。" },
+                { term: "Adverse childhood experiences (ACEs)", cn: "逆境童年体验", en_def: "Potential traumatic events that occur in childhood (0-17 years).", cn_def: "童年时期发生的潜在创伤性事件。", hint: "严重影响身心发展的早期阴影。" },
+                { term: "Identity statuses (Marcia)", cn: "同一性状态 (Marcia)", en_def: "Stages of identity development: Achievement, Diffusion, Foreclosure, Moratorium.", cn_def: "詹姆斯·马西亚提出的青少年身份认同的不同状态。", hint: "关于‘探索’和‘承诺’的组合。" },
+                { term: "Identity Achievement", cn: "同一性达成", en_def: "Identity status after a period of exploration and active choice.", cn_def: "经过探索后，对自我同一性做出了稳定的承诺。", hint: "想清楚了，定下来了。" },
+                { term: "Identity Diffusion", cn: "同一性扩散", en_def: "Status where individual has not explored or committed to an identity.", cn_def: "既不探索也不承诺，处于游离状态。", hint: "迷茫且不作为。" },
+                { term: "Identity Foreclosure", cn: "同一性早闭", en_def: "Status where individual commits to an identity without exploration (often following parents).", cn_def: "未经探索就直接接受了父母或社会的建议。", hint: "‘听妈妈的话’，不做反抗。" },
+                { term: "Identity Moratorium", cn: "同一性延缓", en_def: "Status where individual is in the midst of a crisis, actively exploring.", cn_def: "正处于探索危机的过程，尚未做出承诺。", hint: "‘正在寻找自我’。" }
+            ],
+            "Unit 4: Social Psychology & Personality": [
+                // Topic 4.1 Attribution Theory and Person Perception
+                { term: "Internal attribution", cn: "内部归因", en_def: "Assigning the cause of behavior to personal traits or feelings.", cn_def: "将行为原因归结为个人特质或感受。", hint: "‘他迟到是因为他这人很懒’。把原因推给人的性格。" },
+                { term: "Situational attribution", cn: "情境归因", en_def: "Assigning the cause of behavior to external factors.", cn_def: "将行为原因归结为外部环境因素。", hint: "‘他迟到是因为堵车’。把原因推给外界环境。" },
+                { term: "Optimistic explanatory style", cn: "乐观解释风格", en_def: "Accounting for negative events with external, unstable, and specific causes.", cn_def: "将负面事件归因于外部、不稳定且具体的原因。", hint: "‘这次没考好只是运气差，下次努力就行’。" },
+                { term: "Pessimistic explanatory style", cn: "悲观解释风格", en_def: "Accounting for negative events with internal, stable, and global causes.", cn_def: "将负面事件归因于内部、稳定且全局的原因。", hint: "‘我考砸是因为我笨，我干什么都不行’。" },
+                { term: "Actor/observer bias", cn: "行动者-观察者偏差", en_def: "The tendency to attribute our own behavior to situational causes and others' behavior to internal causes.", cn_def: "倾向于将自己的行为归因于情境，而将他人的行为归因于内在特质。", hint: "‘我摔跤是因为地滑（情境），你摔跤是因为你笨（内在）’。" },
+                { term: "Fundamental attribution error", cn: "基本归因错误", en_def: "Overestimating internal factors and underestimating situational factors for others' behavior.", cn_def: "在解释他人行为时，高估内在因素而低估情境因素。", hint: "看到别人考试不及格，立刻觉得他不努力，而忽略了他可能生病了。" },
+                { term: "Self-serving bias", cn: "自我服务偏差", en_def: "The tendency to take credit for success but blame failure on external factors.", cn_def: "成功归功于自己，失败归咎于外部的倾向。", hint: "‘考得好是因为我聪明，考不好是因为卷子太难’。" },
+                { term: "Internal locus of control", cn: "内部控制点", en_def: "Belief that one controls their own fate.", cn_def: "认为自己可以控制命运的信念。", hint: "掌握自己命运的方向盘。" },
+                { term: "External locus of control", cn: "外部控制点", en_def: "Belief that outside forces determine one's fate.", cn_def: "认为外部力量决定自己命运的信念。", hint: "觉得成功全靠运气或‘上天安排’。" },
+                { term: "Person perception", cn: "他人知觉", en_def: "The process of forming impressions of others.", cn_def: "形成对他人的印象的过程。", hint: "如何观察和评价一个没见过面的人。" },
+                { term: "Mere exposure effect", cn: "多看效应", en_def: "Developing a preference for things simply because they are familiar.", cn_def: "仅仅因为熟悉而产生好感的倾向。", hint: "‘日久生情’。歌听多了会觉得好听，人看多了会觉得顺眼。" },
+                { term: "Self-fulfilling prophecy", cn: "自我实现预言", en_def: "An expectation that causes you to act in ways that make that expectation come true.", cn_def: "一种让你以促使该期望成真的方式行动的期望。", hint: "如果你预言自己今天很倒霉，你可能会真的表现得垂头丧气，从而导致倒霉的事发生。" },
+                { term: "Social comparison (upward/downward)", cn: "社会比较 (上行/下行)", en_def: "Evaluating one's own abilities by comparing with others.", cn_def: "通过与他人比较来评价自己的能力。", hint: "向‘大神’看齐（上行）或向‘差生’找自信（下行）。" },
+                { term: "Relative deprivation", cn: "相对剥夺感", en_def: "Perception that one is worse off relative to those with whom one compares oneself.", cn_def: "相对于比较对象而言，觉得自己处于劣势的感觉。", hint: "你涨了100块工资很高兴，但发现死对头涨了200块，你就开始不爽了。" },
+
+                // Topic 4.2 Attitude Formation and Attitude Change
+                { term: "Stereotype", cn: "刻板印象", en_def: "Generalized belief about a group of people.", cn_def: "对某一群人的泛化的、固定的概念。", hint: "‘某省的人都很能吃辣’。一种思想上的‘地图炮’。" },
+                { term: "Prejudice", cn: "偏见", en_def: "Unjustifiable negative attitude toward a group.", cn_def: "对某一群体无理的、负面的态度。", hint: "一种含有情感色彩的刻有印象，通常是负面的。" },
+                { term: "Discrimination (Social)", cn: "歧视", en_def: "Unjustifiable negative behavior toward a group.", cn_def: "对某一群体表现出的无理的、负向的行为。", hint: "‘偏见’是想法，‘歧视’是做出来（比如拒绝雇用某人）。" },
+                { term: "Implicit attitudes", cn: "内隐态度", en_def: "Attitudes that are at the unconscious level.", cn_def: "潜意识层面的态度。", hint: "你嘴上说不在意，但行为上却不自觉地表现出排斥。可以用IAT测验出来。" },
+                { term: "Just-world phenomenon", cn: "公平世界现象", en_def: "Belief that people get what they deserve.", cn_def: "相信‘好人有好报，恶有恶报’的信念。", hint: "‘他被骗肯定是活该，谁让他贪心’。给受害者贴标签来换取内心的安全感。" },
+                { term: "Out-group homogeneity bias", cn: "外群体同质性偏差", en_def: "Perception that out-group members are more similar to one another than in-group members are.", cn_def: "认为外群体成员之间非常相似的倾向。", hint: "‘他们那群人都长一个样，性格也一样’。" },
+                { term: "In-group bias", cn: "内群体偏差", en_def: "Tendency to favor one's own group.", cn_def: "偏袒自己所在群体的倾向。", hint: "‘我们班的人就是比隔壁班优秀’。" },
+                { term: "Ethnocentrism", cn: "民族中心主义", en_def: "Belief in the superiority of one's own ethnic group.", cn_def: "认为自己民族优于其它的信念。", hint: "用自己文化的尺子去衡量全世界。" },
+                { term: "Belief perseverance", cn: "信念固着", en_def: "Clinging to one's initial conceptions after they have been discredited.", cn_def: "即使原来的证据已被证伪，仍坚持原有信念的倾向。", hint: "‘我不听我不听，反正我认为是对的’。" },
+                { term: "Confirmation bias", cn: "确认偏误", en_def: "Searching for information that supports preexisting beliefs.", cn_def: "倾向于寻找支持自己观点的证据。", hint: "你只会点开那些标题符合你想法的文章。" },
+                { term: "Cognitive dissonance", cn: "认知失调", en_def: "Tension experienced when our beliefs and behaviors don't match.", cn_def: "当信念与行为不一致时产生的焦虑感。", hint: "为了消除紧张，你会要么改行为（不抽烟了），要么改想法（抽烟其实能提神）。费斯廷格提出。" },
+
+                // Topic 4.3 Psychology of Social Situations
+                { term: "Social norms", cn: "社会规范", en_def: "Understood rules for accepted and expected behavior.", cn_def: "社会公认的、被期望的行为准则。", hint: "比如在安静的影院里不能大声喧哗。" },
+                { term: "Normative social influence", cn: "规范性社会影响", en_def: "Conforming to gain approval or avoid disapproval.", cn_def: "为了获得认可或避免排斥而产生的从众行为。", hint: "大家都买这个名牌包，我也得买一个，不然会被排挤。" },
+                { term: "Informational social influence", cn: "信息性社会影响", en_def: "Conforming because we accept others' version of reality.", cn_def: "因为认为别人掌握了正确信息而产生的从众行为。", hint: "在高级西餐厅不知道该用哪把叉子，看到别人用左边的，你也用左边的。" },
+                { term: "Persuasion", cn: "说服", en_def: "The process of creating, reinforcing, or changing people's beliefs or actions.", cn_def: "试图改变他人信念或行为的过程。", hint: "改变主意。" },
+                { term: "Elaboration likelihood model", cn: "阐述可能性模型", en_def: "Theory of how persuasion works; via central and peripheral routes.", cn_def: "解释说服机制的理论；包含中心路径和外周路径。", hint: "看你是有脑子听（逻辑）还是没脑子听（颜值）。" },
+                { term: "Central route to persuasion", cn: "中心路径说服", en_def: "Focuses on the content of the message and logical arguments.", cn_def: "关注信息内容和逻辑论点的路径。", hint: "‘这款电脑的CPU是顶级的，性能极佳’。" },
+                { term: "Peripheral route to persuasion", cn: "外周路径说服", en_def: "Focuses on emotional cues or speaker attractiveness.", cn_def: "关注情绪暗示或说话者个人魅力的路径。", hint: "‘这个明星长得真帅，他代言的肯定好’。" },
+                { term: "Halo effect", cn: "晕轮效应", en_def: "Overall impression of a person influences how we feel about their character.", cn_def: "对一个人的整体印象影响对其具体特质的评价。", hint: "‘长得好看的人一定也很善良’。以偏概全。" },
+                { term: "Foot-in-the-door technique", cn: "登门槛技巧", en_def: "Agreement with a small request makes agreement with a larger request more likely.", cn_def: "同意了一个小请求后，更有可能同意大请求。", hint: "‘先借我1块钱坐车’ -> ‘再借我50块钱吃顿饭’。" },
+                { term: "Door-in-the-face technique", cn: "留面子技巧", en_def: "Asking for a huge request first (expected refusal) leads to better agreement with a small follow-up request.", cn_def: "先提出巨大请求（被拒），再提出小请求（易被接受）。", hint: "‘先借我1000块’ (被拒) -> ‘那借我10块总行吧’ (同意)。" },
+                { term: "Conformity", cn: "从众", en_def: "Adjusting behavior or thinking to coincide with a group standard.", cn_def: "改变行为或想法以向群体标准看齐。", hint: "阿希的线段实验：明明B长，但由于大家都说A长，你也说是A。" },
+                { term: "Obedience", cn: "服从", en_def: "Compliance with an order or request from an authority figure.", cn_def: "服从权威者的命令。", hint: "米尔格拉姆的电击实验。‘权威感’让普通人变得残忍。" },
+                { term: "Individualism", cn: "个人主义", en_def: "Priority to one's own goals over group goals.", cn_def: "更看重个人目标而非群体目标。", hint: "强调个人成就、独特性、自我实现。" },
+                { term: "Collectivism", cn: "集体主义", en_def: "Priority to group goals and identity.", cn_def: "更看重群体目标和身份。", hint: "强调和谐、忠诚、集体荣誉。" },
+                { term: "Multiculturalism", cn: "多元文化主义", en_def: "Presence of several distinct cultural groups within a society.", cn_def: "一个社会中存在多种不同文化群体的现象。", hint: "承认并尊重差异。" },
+                { term: "Group polarization", cn: "群体极化", en_def: "Strengthening of a group's prevailing inclinations through discussion.", cn_def: "经过讨论后，群体原有的倾向变得更加极端。", hint: "一群本来就讨厌数学的人聚在一起，讨论后变得极其仇视数学。" },
+                { term: "Groupthink", cn: "群体思维", en_def: "Mode of thinking that occurs when desire for harmony overrides realistic appraisal of alternatives.", cn_def: "为了维护和谐而牺牲现实评估决策的思维模式。", hint: "大家都不敢提不同意见，最后做出了极其离谱的决定（比如挑战者号事故）。" },
+                { term: "Diffusion of responsibility", cn: "责任分散", en_def: "Feeling less responsible when others are present.", cn_def: "由于他人在场而感到个人责任减轻的现象。", hint: "‘这么多人在这，我不报案肯定有人报’。" },
+                { term: "Social loafing", cn: "社会懈怠", en_def: "Exerting less effort when performing in a group.", cn_def: "在团队任务中比独自一人时出力更少的倾向。", hint: "‘三个和尚没水喝’。出工不出力。" },
+                { term: "Deindividuation", cn: "去个性化", en_def: "Loss of self-awareness and self-restraint in group situations that foster arousal and anonymity.", cn_def: "在群体中感到由于匿名和唤醒感导致的自我约束力下降。", hint: "‘蒙面侠’效应。在暴乱中或网络喷子由于没人认得，表现出平时不敢做的残暴行为。" },
+                { term: "Social facilitation", cn: "社会助长", en_def: "Improved performance on simple tasks in the presence of others.", cn_def: "由于他人在场导致简单任务表现变好。", hint: "‘人来疯’。如果是困难任务，反而可能变差（社会抑制）。" },
+                { term: "False consensus effect", cn: "虚假一致性效应", en_def: "Overestimating the extent to which others share our beliefs.", cn_def: "高估别人与我们想法一致的程度。", hint: "‘我喜欢吃香菜，肯定大家都喜欢吃’。" },
+                { term: "Superordinate goals", cn: "公共目标/超段目标", en_def: "Shared goals that override differences among people and require their cooperation.", cn_def: "需要合作才能完成并能化解矛盾的共同目标。", hint: "谢里夫的强盗洞穴实验：通过一起修理坏了的水车，敌对的两组男孩和好了。" },
+                { term: "Social trap", cn: "社会陷阱", en_def: "Situation where conflicting parties pursue self-interest and become caught in mutually destructive behavior.", cn_def: "由于追求个人利益而导致双方共输的局面。", hint: "公地悲剧。大家都多养牛，最后草地全毁了，大家都饿死。" },
+                { term: "I/O psychologist", cn: "工业/组织心理学家", en_def: "Application of psychological concepts to optimize human behavior in workplaces.", cn_def: "研究工作场所中人类行为的心理学家。", hint: "帮公司招人、提高效率、改善员工心态。" },
+                { term: "Altruism", cn: "利他主义", en_def: "Unselfish regard for the welfare of others.", cn_def: "不计个人回报地关心他人福利的行为。", hint: "真正的无私奉献。" },
+                { term: "Social reciprocity norm", cn: "互惠规范", en_def: "Expectation that people will help those who have helped them.", cn_def: "‘礼尚往来’。你应该帮助那个曾经帮过你的人。" },
+                { term: "Social responsibility norm", cn: "社会责任规范", en_def: "Expectation that people will help those in need, even without future benefits.", cn_def: "对于弱者或需要帮助的人负有的责任感。", hint: "帮助老人过马路，并不期待回报。" },
+                { term: "Bystander effect", cn: "旁观者效应", en_def: "Lower likelihood of helping when more people are present.", cn_def: "旁观者越多，个人施救可能性越低的现象。", hint: "基蒂·吉诺维斯惨案。责任分散的具体体现。" },
+
+                // Topic 4.4 Psychodynamic and Humanistic Theories of Personality
+                { term: "Psychodynamic perspective-personality", cn: "心理动力学视角", en_def: "Focuses on unconscious mind and childhood childhood experiences.", cn_def: "关注潜意识冲突和早期童年经历对人格的影响。", hint: "弗洛伊德是祖师爷。" },
+                { term: "Unconscious (Freud)", cn: "无意识/潜意识", en_def: "A reservoir of inaccessible, mostly unacceptable thoughts and feelings.", cn_def: "一个巨大的、通常无法察觉的本能冲动和被压抑记忆的仓库。", hint: "大脑里的冰山下层。决定了你的性格底色。" },
+                { term: "Denial", cn: "否认", en_def: "Refusing to believe distressing realities.", cn_def: "拒绝承认显而易见的痛苦现实。", hint: "‘他不爱我？不可能，他只是太忙了’。" },
+                { term: "Displacement", cn: "替代/位移", en_def: "Shifting impulses toward a more acceptable or less threatening object.", cn_def: "将冲动转移到更弱或更安全的替代品上。", hint: "老板骂了我，我回家骂老婆，老婆骂孩子，孩子踢猫。" },
+                { term: "Projection (Defense)", cn: "投射", en_def: "Attributing one's own threatening impulses to others.", cn_def: "把自己内心无法接受的冲动强加给别人。", hint: "明明是我讨厌你，我却说：‘我觉得你在讨厌我’。" },
+                { term: "Rationalization", cn: "合理化", en_def: "Offering self-justifying explanations in place of real, more threatening reasons.", cn_def: "找借口。用虚假的、能被社会接受的理由代替真实理由。", hint: "‘我没考好是因为那天教室太热’（其实是没复习）。‘酸葡萄心理’。" },
+                { term: "Reaction formation", cn: "反应形成", en_def: "Switching unacceptable impulses into their opposites.", cn_def: "表现得与你内心真实想法完全相反。", hint: "明明很讨厌这个老师，却对他表现得极其热情和恭敬。" },
+                { term: "Regression", cn: "退行", en_def: "Retreating to a more infantile stage of development.", cn_def: "在压力下表现出像更小孩子一样的行为。", hint: "由于弟弟出生，已经学会走路的哥哥开始要求妈妈抱。" },
+                { term: "Repression", cn: "压抑", en_def: "Banishment of anxiety-arousing thoughts from consciousness.", cn_def: "将痛苦的念头强行推入潜意识里不愿去想。", hint: "这是所有防御机制的基础。就像把妖怪关进地牢。" },
+                { term: "Sublimation", cn: "升华", en_def: "Transforming unacceptable impulses into socially valued motivation.", cn_def: "将原始本能转化为积极、高尚的社会成就。", hint: "一个人有暴力冲动，结果成了拳击冠军或外科医生。" },
+                { term: "Projective tests", cn: "投射测验", en_def: "Personality test designed to let a person respond to ambiguous stimuli, revealing hidden emotions and internal conflicts (e.g., Rorschach).", cn_def: "一种人格测验，通过让受测者面对模糊刺激（如墨迹图）来揭示其内心深处的冲突。", hint: "墨迹图测验：‘你看到了什么？’ 罗夏墨迹测验。" },
+                { term: "Humanistic psychology", cn: "人本主义心理学", en_def: "Focused on human potential and self-actualization.", cn_def: "关注人类潜能、自我实现和人的价值。", hint: "马斯洛和罗杰斯。研究‘健康的、快乐的人’是如何发展的。" },
+                { term: "Unconditional positive regard", cn: "无条件积极关注", en_def: "Caring, nonjudgmental attitude towards another person.", cn_def: "对他人表现出全然的接纳和关怀，不带评价。", hint: "父母对孩子：‘无论你变得怎样，我都依然爱你’。罗杰斯提出。" },
+                { term: "Self-actualizing tendency", cn: "自我实现倾向", en_def: "Motivation to fulfill one's potential.", cn_def: "实现个人潜能、充分发挥才华的内在驱动力。", hint: "位于马斯洛需求塔的尖端。" },
+
+                // Topic 4.5: Social-Cognitive and Trait Theories of Personality
+                { term: "Social-cognitive perspective–personality", cn: "社会认知视角", en_def: "Personal traits and social context interact to produce behavior.", cn_def: "认为人格特质、行为和社会环境的相互作用决定了人的表现。", hint: "班杜拉提出。你在家和在学校可能是完全不同的样子。" },
+                { term: "Reciprocal determinism", cn: "交互决定论", en_def: "The interacting influences of behavior, internal cognition, and environment.", cn_def: "行为、认知和环境三者之间互为因果的影响关系。", hint: "我爱笑（人格）-> 大家都对我笑（环境）-> 我更开心地社交（行为）。" },
+                { term: "Self-efficacy", cn: "自我效能感", en_def: "One's sense of competence on a task.", cn_def: "对于自己能否成功完成某项任务的信念。", hint: "‘我相信我行’。高自我效能的人更容易成功。不同于自尊。" },
+                { term: "Self-concept (Unit 4)", cn: "自我概念", en_def: "All our thoughts and feelings about ourselves.", cn_def: "我是谁？对自己的整体评价。", hint: "在人格理论里非常重要。" },
+                { term: "Self-esteem", cn: "自尊", en_def: "One's feelings of high or low self-worth.", cn_def: "一个人对自身价值的评价感。", hint: "觉得自己活得有尊严、值不值钱。" },
+                { term: "Trait view on personality", cn: "人格特质观", en_def: "Explains personality in terms of stable, enduring character patterns.", cn_def: "用稳定的、持久的性格模式来解释人格。", hint: "关注人‘现在到底是什么样’。比如‘他很外向’。" },
+                { term: "Big Five Theory", cn: "大五人格理论", en_def: "The five broad dimensions of personality (OCEAN).", cn_def: "现代人格心理学中最被认可的模型：OCEAN。", hint: "Openness, Conscientiousness, Extraversion, Agreeableness, Neuroticism。" },
+                { term: "Openness (Big Five)", cn: "开放性", en_def: "Openness to new experiences and ideas.", cn_def: "对新体验、想象力和好奇心的程度。", hint: "喜欢尝试新餐厅、新思维。高分者很有创意。" },
+                { term: "Conscientiousness (Big Five)", cn: "尽责性", en_def: "Self-discipline, organization, and achievement-striving.", cn_def: "有计划、细心、自律、负责任的程度。", hint: "‘学霸特质’。高分者做事有条不紊。" },
+                { term: "Extraversion (Big Five)", cn: "外向性", en_def: "Sociability, energy, and outgoing nature.", cn_def: "社交、充满活力、健谈的程度。", hint: "‘社牛’。" },
+                { term: "Agreeableness (Big Five)", cn: "宜人性", en_def: "Cooperative, compassionate, and trustworthy nature.", cn_def: "同情心、合作精神、信任他人的程度。", hint: "老好人。" },
+                { term: "Emotional stability (Neuroticism)", cn: "情绪稳定性/神经质", en_def: "Neuroticism is the degree of emotional instability (anxiety, moodiness).", cn_def: "经历负向情绪（如焦虑、波动）的倾向。", hint: "低分者很淡定；高分者容易焦虑、多愁善感。" },
+                { term: "Personality inventories", cn: "人格问卷", en_def: "Self-report surveys (like MMPI).", cn_def: "自我报告式的性格问卷。", hint: "一套长长的问卷让你打分。比投射测验更客观。" },
+                { term: "Factor analysis", cn: "因素分析", en_def: "Statistical method used to find underlying patterns (traits) in data.", cn_def: "用于在大堆数据中找到隐藏模式（核心特质）的统计方法。", hint: "‘大数据降维打击’。把各种性格词语归类成几大核心特质。" },
+
+                // Topic 4.6 Motivation
+                { term: "Drive-reduction theory", cn: "驱力还原理论", en_def: "Physiological needs create a drive that motivates an organism to satisfy the need.", cn_def: "生理需求产生心理上的‘驱力’，促使生物去减少这种张力。", hint: "渴了（需求）-> 感到焦躁（驱力）-> 喝水 -> 舒服了（还原）。" },
+                { term: "Homeostasis", cn: "内稳态", en_def: "Maintenance of a steady internal state.", cn_def: "维持内部平衡。生物钟的平衡点。", hint: "身体的‘温控系统’。太热就出汗，太冷就打冷战。" },
+                { term: "Arousal theory", cn: "觉醒理论", en_def: "Motivation to reach an optimal level of excitement.", cn_def: "追求最佳兴奋水平的动机理论。", hint: "太无聊时你想找点刺激，太紧张时你想冷静。" },
+                { term: "Optimal arousal", cn: "最佳觉醒水平", en_def: "The level of arousal at which person's performance is maximized.", cn_def: "表现达到巅峰时的兴奋程度。", hint: "‘心流’产生的土壤。" },
+                { term: "Yerkes-Dodson Law", cn: "耶基斯-多德森定律", en_def: "Performance increases with arousal only up to a point, beyond which it decreases.", cn_def: "表现在兴奋度适中时达到最好。倒U型曲线。", hint: "太闲没干劲，太压力会崩溃。做简单题可以兴奋点，做难题要冷静点。" },
+                { term: "Self-determination theory", cn: "自我决定理论", en_def: "Motivations based on autonomy, competence, and relatedness.", cn_def: "关注人类天生具备的三种心理需求：自主权、胜任感和归属感。", hint: "如果你觉得自己能决定、干得好、有人爱，你就动力十足。" },
+                { term: "Intrinsic motivation", cn: "内部动机", en_def: "Doing something because you enjoy it.", cn_def: "因为热爱和兴趣而去做的动力。", hint: "学习是因为喜欢，不是为了成绩。" },
+                { term: "Extrinsic motivation", cn: "外部动机", en_def: "Doing something for a reward or to avoid punishment.", cn_def: "为了拿奖励、赚大钱、不被骂而做的动力。", hint: "为钱打工。" },
+                { term: "Incentive theory", cn: "激励理论", en_def: "Environmental stimuli that 'pull' us toward behaviors.", cn_def: "外部诱惑（如金钱、美食）吸引我们去行动。", hint: "‘甜萝卜大棒’。外部拉力。" },
+                { term: "Instincts", cn: "本能", en_def: "Fixed, unlearned patterns of behavior throughout a species.", cn_def: "全物种通用的、非学习而来的、固定的行为模式。", hint: "三文鱼洄游、婴儿吸吮。不是所有行为都能叫本能，必须天生就有。" },
+                { term: "Approach-approach conflict", cn: "双趋冲突", en_def: "Choosing between two attractive options.", cn_def: "在两个都想要的选项中选一个。", hint: "‘鱼和熊掌不可兼得’。去吃火锅还是去吃日料？" },
+                { term: "Approach-avoidance conflict", cn: "趋避冲突", en_def: "Goal has both positive and negative qualities.", cn_def: "同一目标既有吸引力又有排斥力。", hint: "‘又爱又恨’。想吃火锅（好），但怕胖（坏）。" },
+                { term: "Avoidance-avoidance conflict", cn: "双避冲突", en_def: "Choosing between two unattractive options.", cn_def: "在两个都不想要的选项中选一个。", hint: "‘前有狼后有虎’。去写作业还是去洗碗？" },
+                { term: "Sensation seeking theory", cn: "感觉寻求理论", en_def: "Tendency to seek out varied, novel, complex, and intense sensations.", cn_def: "寻找多样化、新奇、复杂且强烈的感官体验的倾向。", hint: "寻找刺激的人。" },
+                { term: "Experience seeking", cn: "经验寻求", en_def: "Seeking new mental or internal experiences.", cn_def: "由于感官、思想、生活方式而追求新奇异的体验。", hint: "旅游、读怪书、尝试奇特的视角。" },
+                { term: "Thrill or adventure seeking", cn: "惊险与冒险寻求", en_def: "Willingness to take risks through physical adventure.", cn_def: "愿意通过高风险的体育活动追求刺激。", hint: "蹦极、跳伞。" },
+                { term: "Disinhibition", cn: "去抑制", en_def: "Seeking stimulation through social and sexual disinhibition.", cn_def: "通过社交行为上的放纵来寻求刺激。", hint: "‘放飞自我’。在派对上玩得很嗨。" },
+                { term: "Boredom susceptibility", cn: "对枯燥的敏感性", en_def: "Aversion to repetition and monotonous tasks.", cn_def: "极度讨厌重复和无聊的任务。", hint: "‘哪怕只要坐着我就受不了’。" },
+                { term: "Eating motivation", cn: "进食动机", en_def: "Why we feel hungry and when we eat.", cn_def: "胃如何指挥人大脑感觉到饿、饱的机制。", hint: "下丘脑的功劳。" },
+                { term: "Ghrelin", cn: "饥饿素", en_def: "Hormone secreted by empty stomach; sends 'I'm hungry' signals to the brain.", cn_def: "胃部分泌的激素；大脑收到：‘我饿了！’", hint: "‘肚子叫’的主力军。" },
+                { term: "Leptin", cn: "瘦素", en_def: "Protein hormone secreted by fat cells; tells brain to decrease hunger.", cn_def: "脂肪细胞分泌的蛋白质激素；大脑收到：‘别吃了，饱了！’", hint: "控制食欲的刹车。" },
+                { term: "Pituitary gland (Unit 4)", cn: "垂体 (Unit 4)", en_def: "Master gland controlled by the hypothalamus.", cn_def: "下丘脑控制的‘主腺体’。", hint: "它给各种激素下指令，包括饥饿管理相关。" },
+
+                // Topic 4.7 Emotion
+                { term: "Affect (emotion)", cn: "情感/情绪", en_def: "A feeling or mood characterized by physical arousal and cognitive interpretation.", cn_def: "一种包含生理反应、主观感受和认知评价的心理状态。", hint: "主观的心情波动。" },
+                { term: "Facial-feedback hypothesis", cn: "面部反馈假设", en_def: "Facial expressions can influence our emotions.", cn_def: "你的面部表情能反过来影响你的情绪。", hint: "‘强颜欢笑’。如果你假装笑一下，大脑可能会觉得自己变高兴了点。" },
+                { term: "Broaden-and-build theory", cn: "扩展-建构理论", en_def: "Positive emotions broaden outlook and help build lasting personal resources.", cn_def: "积极情绪能拓宽视野，并帮你积累持久的心理资源。", hint: "‘爱笑的女孩运气不会差’。心情好时你更容易学习和交友。芭芭拉·弗雷德里克森提出。" },
+                { term: "Display rules", cn: "表情规则", en_def: "Cultural rules for how and when to show emotions.", cn_def: "文化中关于在何时、何地、向谁展示情绪的潜规则。", hint: "比如在正式场合要控制笑容。" }
+            ],
+            "Unit 5: Mental & Physical Health": [
+                // Topic 5.1 Introduction to Health Psychology
+                { term: "Health psychology", cn: "健康心理学", en_def: "Subfield that provides psychology's contribution to behavioral medicine.", cn_def: "心理学的一个分支，研究心理和行为如何影响身体健康。", hint: "研究‘心’与‘身’的互动。" },
+                { term: "Eustress", cn: "良性压力", en_def: "A positive stress that energizes a person and helps them reach a goal.", cn_def: "能激发能量、帮助实现目标的积极压力。", hint: "比如考试前适度的紧张让你发挥更好。" },
+                { term: "Distress", cn: "劣性压力/苦恼", en_def: "A negative stress that can make a person sick or can keep a person from reaching a goal.", cn_def: "产生消极影响、可能致病或阻碍目标实现的压力。", hint: "让你感到崩溃、透支的压力。" },
+                { term: "Adverse childhood experiences (ACEs) (Unit 5)", cn: "逆境童年体验", en_def: "Traumatic events in childhood linked to long-term health problems.", cn_def: "童年时期的创伤，可能导致成年后长期的身心健康问题。", hint: "早年的‘健康定时炸弹’。" },
+                { term: "General Adaptation Syndrome (GAS)", cn: "一般适应综合征", en_def: "Selye's concept of the body's adaptive response to stress in three phases: alarm, resistance, exhaustion.", cn_def: "身体应对压力的三阶段反应：警觉、抵抗、耗竭。", hint: "ARE (Alarm, Resistance, Exhaustion)。最后阶段最危险，容易生病。" },
+                { term: "Fight-flight-freeze response", cn: "战斗-逃跑-冻结反应", en_def: "Body's automatic response to a perceived threat.", cn_def: "身体面对威胁时的自动防御反应。", hint: "要么打，要么跑，要么原地装死。" },
+                { term: "Tend and befriend theory", cn: "抚慰与结盟理论", en_def: "Under stress, people (especially women) often provide support to others and bond with and seek support from others.", cn_def: "面对压力时，倾向于照顾他人并寻求社会联结的策略。", hint: "‘抱团取暖’。女性在压力下常有的反应。" },
+                { term: "Problem-focused coping", cn: "问题聚焦应对", en_def: "Attempting to alleviate stress directly by changing the stressor.", cn_def: "直接改变压力源来减轻压力。", hint: "‘解决事情’。如果作业多，就立刻制定计划写完。" },
+                { term: "Emotion-focused coping", cn: "情绪聚焦应对", en_def: "Attempting to alleviate stress by avoiding or ignoring a stressor and attending to emotional needs.", cn_def: "通过回避压力源或处理自身情绪需求来减轻压力。", hint: "‘处理心情’。如果压力大，就去找朋友倾诉或看电影放松，而不直接去解决那个难题。" },
+
+                // Topic 5.2: Positive Psychology
+                { term: "Positive psychology (Unit 5)", cn: "积极心理学", en_def: "The scientific study of human flourishing and strengths.", cn_def: "研究人类繁荣、幸福和力量的科学。", hint: "创始人赛里格曼。研究怎么让人活得更好，而不只是治病。" },
+                { term: "Subjective well-being", cn: "主观幸福感", en_def: "Self-perceived happiness or satisfaction with life.", cn_def: "个体主观感受到的快乐和对生活的满意度。", hint: "你自己觉得自己幸福吗？" },
+                { term: "Wisdom", cn: "智慧", en_def: "Expert knowledge about the practical aspects of life.", cn_def: "关于生活实际层面的专业知识和判断力。", hint: "积极心理学核心美德之一。深思熟虑。" },
+                { term: "Courage", cn: "勇气", en_def: "Emotional strengths that involve the exercise of will to accomplish goals.", cn_def: "涉及行使意志力以克服困难、克服恐惧的力量。", hint: "积极心理学核心美德之一。" },
+                { term: "Humanity", cn: "人性/仁慈", en_def: "Interpersonal strengths that involve tending and befriending others.", cn_def: "涉及关心和照料他人的心理力量。", hint: "爱与同情心。" },
+                { term: "Temperance", cn: "节制", en_def: "Strengths that protect against excess.", cn_def: "防止过度、保持适度的力量。", hint: "宽恕、谦逊、自律。" },
+                { term: "Transcendence", cn: "超越", en_def: "Strengths that forge connections to the larger universe and provide meaning.", cn_def: "建立与更广阔世界的联系并提供意义的力量。", hint: "对美的欣赏、希望、信仰。" },
+
+                // Topic 5.3 Explaining and Classifying Psychological Disorders
+                { term: "DSM-5", cn: "精神疾病诊断与统计手册 (第5版)", en_def: "The American Psychiatric Association's system for diagnosing psychological disorders.", cn_def: "目前最常用的诊断心理障碍的‘字典’标准。", hint: "‘心理疾病的说明书’。只描述症状，不解释原因。" },
+                { term: "ICD-11", cn: "国际疾病分类 (第11版)", en_def: "The WHO's International Classification of Diseases; includes mental disorders.", cn_def: "世界卫生组织发布的疾病分类系统，包含精神障碍。", hint: "全球通用的医疗诊断标准。" },
+                { term: "Behavioral perspective (Disorders)", cn: "行为学视角", en_def: "Absence of reinforcement or abnormal learning as cause of disorders.", cn_def: "认为心理障碍源于错误的学习和缺乏强化。", hint: "重点在‘行为是被学会的’。" },
+                { term: "Psychodynamic perspective (Disorders)", cn: "心理动力学视角", en_def: "Unconscious conflicts and childhood experiences as cause of disorders.", cn_def: "认为障碍源于潜意识冲突和童年阴影。", hint: "‘挖掘过去’。弗洛伊德派。" },
+                { term: "Humanistic perspective (Disorders)", cn: "人本主义视角", en_def: "Failure to strive toward self-actualization as cause of disorders.", cn_def: "认为障碍源于自我实现受阻或缺乏无条件接纳。", hint: "‘追求潜力’阶段出了问题。" },
+                { term: "Cognitive perspective (Disorders)", cn: "认知视角", en_def: "Irrational or maladaptive thought patterns as cause of disorders.", cn_def: "认为障碍源于非理性或错误的思维方式。", hint: "‘想法决定心情’。如果你总往坏处想，就会抑郁。" },
+                { term: "Evolutionary perspective (Disorders)", cn: "进化视角", en_def: "Examines if symptoms like anxiety were once adaptive.", cn_def: "认为某些障碍可能是古代适应环境残留下来的特征。", hint: "‘这种焦虑在古代能救命’。" },
+                { term: "Sociocultural perspective (Disorders)", cn: "社会文化视角", en_def: "Roles, expectations, and culture as cause of disorders.", cn_def: "认为社会压力、期望和文化环境导致了障碍。", hint: "某种疾病可能只在特定国家流行。" },
+                { term: "Biological perspective (Disorders)", cn: "生物学视角", en_def: "Genetics, brain chemistry, and brain structure as cause of disorders.", cn_def: "认为障碍源于基因、脑化学物质失衡或脑结构异常。", hint: "‘零件坏了’。重点在生化反馈。" },
+                { term: "Biopsychosocial perspective (Disorders)", cn: "生物心理社会视角", en_def: "Integrated approach viewing disorders as a combination of multiple factors.", cn_def: "认为障碍由生物、心理和社会因素共同作用产生。", hint: "‘全景分析’。目前最科学的综合模型。" },
+                { term: "Diathesis-stress model", cn: "素质-压力模型", en_def: "Suggests that a genetic predisposition (diathesis) and environmental stress combine to cause a disorder.", cn_def: "认为个体具备遗传易感性，在压力诱发下才会发病。", hint: "‘基因上膛，环境扣动扳机’。" },
+
+                // Topic 5.4 Selection of Categories of Psychological Disorders
+                { term: "ADHD", cn: "注意缺陷多动障碍", en_def: "Condition including attention difficulty, hyperactivity, and impulsiveness.", cn_def: "包含注意力集中困难、活动过度和冲动。多发于儿童期。", hint: "多动症。" },
+                { term: "Autism spectrum disorder (ASD)", cn: "孤独症谱系障碍", en_def: "Disorder appearing in childhood marked by deficient communication and social interaction.", cn_def: "以社交和沟通障碍及受限的重复行为为特征的障碍。", hint: "自闭症谱系。" },
+                { term: "Schizophrenic spectrum disorder", cn: "精神分裂症谱系障碍", en_def: "Group of disorders characterized by delusions, hallucinations, and disorganized speech.", cn_def: "以思维、情感和知觉扭曲（如妄想、幻觉）为特征的障碍。", hint: "‘现实感丧失’。核心特征：幻觉和妄想。" },
+                { term: "Positive symptoms", cn: "阳性症状", en_def: "Inappropriate behaviors are present (e.g., hallucinations).", cn_def: "大脑中多出来的、不正常的反应。", hint: "‘多出来的赘肉’。比如幻听、妄想。" },
+                { term: "Negative symptoms", cn: "阴性症状", en_def: "Appropriate behaviors are absent (e.g., flat affect).", cn_def: "大脑里缺少的、正常的反应。", hint: "‘缺失的功能’。比如面无表情、不爱说话。" },
+                { term: "Hallucinations", cn: "幻觉", en_def: "False sensory experiences.", cn_def: "没有外部刺激却产生的感官体验。", hint: "‘看见/听到不存在的东西’。幻听最常见。" },
+                { term: "Delusions", cn: "妄想", en_def: "False beliefs maintained despite contrary evidence.", cn_def: "坚信不疑的错误信念。", hint: "‘固执的错误想法’。不是感觉，是思想。" },
+                { term: "Delusions of grandeur", cn: "夸大妄想", en_def: "Belief that one is famous, powerful, or supernatural.", cn_def: "认为自己拥有至高无上的权力、财富或神力的妄想。", hint: "‘我觉得我是玉皇大帝’。" },
+                { term: "Delusions of paranoia", cn: "被害妄想", en_def: "Belief that others are plotting against them.", cn_def: "认为有人在监视、谋害或迫害自己的妄想。", hint: "‘总有刁民想害朕’。" },
+                { term: "Disorganized thinking", cn: "思维混乱", en_def: "Fragmented, bizarre, or distorted thoughts.", cn_def: "破碎、怪异或扭曲的思想过程。", hint: "说话逻辑断裂。" },
+                { term: "Word salad", cn: "词语杂拌", en_def: "Jumbled ideas within sentences.", cn_def: "句子中毫无关联的词语胡乱堆砌。", hint: "即便每个词都懂，连在一起却像外星语。" },
+                { term: "Catatonic stupor", cn: "紧张性木僵", en_def: "Remaining motionless for hours and then becoming agitated.", cn_def: "长时间保持一个姿势一动不动。", hint: "像雕像一样，对外界完全没反应。" },
+                { term: "Flat affect", cn: "情感平淡", en_def: "A lack of emotional responsiveness.", cn_def: "完全没有表情或情感起伏。", hint: "‘面具脸’。听到极好或极坏消息都一个表情。" },
+                { term: "Major depressive disorder", cn: "重度抑郁障碍", en_def: "Disorder characterized by at least two weeks of depressed mood and loss of interest.", cn_def: "持续两周以上的极度抑郁和对所有事物失去兴趣。", hint: "‘感冒之王’。不仅是难过，更是‘活着的动力消失了’。" },
+                { term: "Persistent depressive disorder", cn: "持续性抑郁障碍 (恶劣心境)", en_def: "A chronically low mood that lasts for at least two years.", cn_def: "程度比重郁轻，但持续时间极长（两年以上）的低落情绪。", hint: "‘长期的灰暗色调’。" },
+                { term: "Bipolar I", cn: "双相障碍 I 型", en_def: "Alternation between deep depression and extreme mania.", cn_def: "在重度抑郁和极度狂躁之间剧烈摆动。", hint: "情绪的高峰和谷底。狂躁发作很明显。" },
+                { term: "Bipolar II", cn: "双相障碍 II 型", en_def: "Alternation between deep depression and hypomania.", cn_def: "重度抑郁与‘轻躁狂’交替。", hint: "相比I型，狂躁程度较轻，但抑郁同样沉重。" },
+                { term: "Manic episode", cn: "狂躁发作", en_def: "Hyperactive, wildly optimistic state with little need for sleep.", cn_def: "极度兴奋、乐观、不切实际、不需要睡觉的状态。", hint: "‘超人模式’。疯狂花钱或做决定。" },
+                { term: "Hypomanic episode", cn: "轻躁狂发作", en_def: "Less extreme manic phase.", cn_def: "程度较轻的狂躁。", hint: "表现为效率极高、精力充沛，但没到失控程度。" },
+                { term: "Phobia", cn: "恐惧症", en_def: "Persistent, irrational fear of a specific object or situation.", cn_def: "对特定物体或情境持续、非理性的恐惧。", hint: "比如怕蜘蛛、怕打雷。一定要‘非理性’且‘干扰生活’。" },
+                { term: "Agoraphobia", cn: "广场恐惧症", en_def: "Fear of situations where escape might be difficult.", cn_def: "害怕身处这种难以逃脱或得不到帮助的开放公共场。合", hint: "不敢出门，不敢去人多的地方。" },
+                { term: "Panic disorder", cn: "惊恐障碍", en_def: "Characterized by recurrent, unexpected panic attacks.", cn_def: "反复发作、突如其来的强烈恐惧感（惊恐发作）。", hint: "感觉死神降临、心跳快到爆炸、呼吸困难。" },
+                { term: "Ataque de nervios", cn: "神经发作 (文化绑定)", en_def: "Cultural syndrome (Latin American) involving screaming, trembling, and dissociation in response to stress.", cn_def: "拉丁文化中一种应对重大压力的爆发性反应。", hint: "‘心碎的狂喊’。展示了心理障碍的文化特异性。" },
+                { term: "Social anxiety disorder", cn: "社交焦虑障碍", en_def: "Intense fear of social situations, leading to avoidance.", cn_def: "对社交情境的极度恐惧，担心被审视或出丑。", hint: "极其严重的‘社恐’。" },
+                { term: "Taijin Kyofusho", cn: "对人恐怖症 (文化绑定)", en_def: "Cultural syndrome (Japanese) fear of offending or embarrassing others with one's body/expression.", cn_def: "日本文化中一种担心自己的言行、气味、眼神伤害或尴尬他人的恐惧。", hint: "西方社恐怕自己被审视，太人恐怖症怕自己影响别人。" },
+                { term: "OCD", cn: "强迫症", en_def: "Disorder characterized by unwanted repetitive thoughts (obsessions) and actions (compulsions).", cn_def: "以反复出现的痛苦念头（强迫思维）和刻板行为（强迫行为）为特征。", hint: "明知无意义但停不下来。" },
+                { term: "Obsessions", cn: "强迫思维", en_def: "Repetitive thoughts (e.g., concerns about germs).", cn_def: "反复出现的、闯入性的痛苦想法。", hint: "脑子里停不下来的‘脏、不安全’的念头。" },
+                { term: "Compulsions", cn: "强迫行为", en_def: "Repetitive behaviors (e.g., excessive hand washing).", cn_def: "为了减轻强迫思维带来的焦虑而重复做的动作。", hint: "洗手50次、反复锁门。" },
+                { term: "Hoarding disorder", cn: "囤积障碍", en_def: "Difficulty discarding possessions, leading to clutter.", cn_def: "极度难以丢弃物品，即使无用，导致生活空间被堆满。", hint: "‘垃圾山屋主’。" },
+                { term: "Dissociative disorders", cn: "分离性障碍", en_def: "Disorders where conscious awareness becomes separated from previous memories and feelings.", cn_def: "意识与过去的记忆或人格发生脱离或崩解。", hint: "‘灵魂出窍’或‘自我断裂’感。" },
+                { term: "Dissociative Identity Disorder (DID)", cn: "分离性身份障碍", en_def: "RARE disorder in which a person exhibits two or more distinct and alternating personalities.", cn_def: "极罕见障碍，一个人表现出两个或多个截然不同且交替的人格。", hint: "‘多重人格’。" },
+                { term: "Dissociative amnesia", cn: "分离性遗忘症", en_def: "Inability to recall important personal information, usually of a stressful nature.", cn_def: "无法回忆起重要的个人信息，通常与重大压力有关。", hint: "由于创伤而选择性‘忘记’了自己是谁或发生了什么。" },
+                { term: "Dissociative fugue", cn: "分离性漫游", en_def: "Sudden travel and replacement of identity, often following trauma.", cn_def: "在遗忘自己身份的同时，突然离家漫游并可能建立新身份。", hint: "‘逃离并变身’。醒来发现自己在千里之外成了另一个人。" },
+                { term: "Post-traumatic stress disorder (PTSD)", cn: "创伤后应激障碍", en_def: "Disorder characterized by haunting memories, nightmares, and social withdrawal after a traumatic event.", cn_def: "重大创伤后出现的闪回、梦魇和情感麻木。", hint: "‘记忆的牢笼’。" },
+                { term: "Anorexia nervosa", cn: "神经性厌食症", en_def: "Eating disorder characterized by self-starvation and excessive weight loss.", cn_def: "由于极度恐惧发胖而拒绝进食，导致体重严重不足。", hint: "‘饿死也要瘦’。即使已经皮包骨，照镜子仍觉得自己胖。" },
+                { term: "Bulimia nervosa", cn: "神经性贪食症", en_def: "Eating disorder characterized by binge eating followed by purging.", cn_def: "暴饮暴食后通过催吐、吃泻药等方式清除食物。", hint: "‘大吃大吐’。体重通常维持在正常范围，所以更隐蔽。" },
+                { term: "Paranoid personality disorder", cn: "偏执型人格障碍", en_def: "Pattern of distrust and suspiciousness of others.", cn_def: "对他人持久怀疑、不信任的人格模式。", hint: "‘所有人都在针对我’，且固执己见。" },
+                { term: "Schizoid personality disorder", cn: "分裂样人格障碍", en_def: "Detachment from social relationships and restricted range of emotional expression.", cn_def: "情感极度冷漠，对社交和人机关系毫无兴趣。", hint: "‘真正的孤独者’。不是害怕社交，而是根本不在乎。" },
+                { term: "Schizotypal personality disorder", cn: "分裂型人格障碍", en_def: "Acute discomfort in close relationships, cognitive distortions, and eccentricities of behavior.", cn_def: "社交不适，且伴有怪异的想法（如迷信、幻觉）和行为。", hint: "‘怪人’。思维跳跃且古怪。" },
+                { term: "Antisocial personality disorder", cn: "反社会型人格障碍", en_def: "Lack of conscience for wrongdoing even toward friends and family.", cn_def: "缺乏良知，漠视他人权利，常有欺诈或暴力行为。", hint: "‘冷血动物’。与社会规范对抗。注意与‘社恐’完全不同。" },
+                { term: "Histrionic personality disorder", cn: "表演型人格障碍", en_def: "Excessive emotionality and attention-seeking.", cn_def: "极度需要成为注意力中心，情感表达夸张且肤浅。", hint: "‘戏精’。如果不关注他，他就受不了。" },
+                { term: "Narcissistic personality disorder", cn: "自恋型人格障碍", en_def: "Grandiosity, need for admiration, and lack of empathy.", cn_def: "夸大的自我感，极度需要赞美，且缺乏共情能力。", hint: "‘我是最完美的’。不仅自信，更是把别人当工具。" },
+                { term: "Borderline personality disorder (BPD)", cn: "边缘型人格障碍", en_def: "Instability of interpersonal relationships, self-image, and affect.", cn_def: "情绪、人际关系和自我形象的极度不稳定。", hint: "‘爱恨就在一瞬间’。极其害怕被抛弃。" },
+                { term: "Avoidant personality disorder", cn: "回避型人格障碍", en_def: "Social inhibition, feelings of inadequacy, and hypersensitivity to negative evaluation.", cn_def: "通过极端回避来保护自己免受拒绝和批评。", hint: "因为太敏感、太怕被拒绝所以干脆躲起来。" },
+                { term: "Dependent personality disorder", cn: "依赖型人格障碍", en_def: "Excessive need to be taken care of, leading to submissive behavior.", cn_def: "过分需要被照顾，表现出顺从和死缠烂打。", hint: "‘巨婴’人格。无法独立做决定。" },
+                { term: "Obsessive-compulsive personality disorder (OCPD)", cn: "强迫型人格障碍", en_def: "Preoccupation with orderliness, perfectionism, and control.", cn_def: "对秩序、完美和控制的极度痴迷。", hint: "不是强迫症（没有具体的思维/行为循环），而是一贯的‘完美主义强迫型性格’。" },
+
+                // Topic 5.5 Treatment of Psychological Disorders
+                { term: "Therapeutic alliance", cn: "治疗联盟", en_def: "Bond of trust and mutual understanding between a therapist and client.", cn_def: "治疗师与求助者之间建立的信任和互相理解的关系。", hint: "‘治疗的基础’。关系越好，效果越好。" },
+                { term: "Cultural humility", cn: "文化谦逊", en_def: "Ability to maintain an interpersonal stance that is other-oriented in relation to cultural identity.", cn_def: "承认自己在他人文化背景方面的局限性，并持开放、尊重的态度。", hint: "治疗师不把自己当成对方文化的专家。" },
+                { term: "Deinstitutionalization", cn: "去机构化", en_def: "Transferring psychiatric patients from large hospitals to community-based care.", cn_def: "将精神病患者从大型封闭医院转移到社区康复机构的过程。", hint: "让病人回归社会。" },
+                { term: "Decentralized treatment", cn: "分散式治疗", en_def: "Community-based treatment programs.", cn_def: "在社区或就近地点提供的治疗服务。", hint: "更方便、更人性化。" },
+                { term: "Ethical principles: Nonmaleficence", cn: "伦理原则：不伤害", en_def: "Duty to do no harm.", cn_def: "治疗的第一原则：不给求助者造成额外伤害。", hint: "首要任务。" },
+                { term: "Ethical principles: Fidelity", cn: "伦理原则：忠诚", en_def: "Being faithful and committed to current service.", cn_def: "对工作的忠诚和对合约、承诺的遵守。", hint: "建立信任的基石。" },
+                { term: "Ethical principles: Integrity", cn: "伦理原则：正真/诚实", en_def: "Professional honesty and accuracy.", cn_def: "保持专业的诚实和准确性。", hint: "不欺骗求助者。" },
+                { term: "Ethical principles: Respect for rights and dignity", cn: "伦理原则：尊重权利与尊严", en_def: "Acknowledging self-determination and privacy.", cn_def: "尊重求助者的隐私权和自我决定权。", hint: "比如保密原则。" },
+                { term: "Psychodynamic therapy", cn: "心理动力学疗法", en_def: "Therapy deriving from the psychoanalytic tradition.", cn_def: "基于经典精神分析传统，探索潜意识和过去的疗法。", hint: "现在的精神分析。" },
+                { term: "Free association", cn: "自由联想", en_def: "Technique where the patient says whatever comes to mind.", cn_def: "让求助者毫无保留地说出脑子里出现的任何念头。", hint: "‘意识流’爆破潜意识。" },
+                { term: "Dream interpretation", cn: "梦的解析", en_def: "Analyzing the manifest (visible) and latent (hidden) content of dreams.", cn_def: "分析梦的显性内容和隐性含义。", hint: "梦是通往潜意识的‘王道’。" },
+                { term: "Cognitive restructuring", cn: "认知重构", en_def: "Process of learning to identify and dispute irrational or maladaptive thoughts.", cn_def: "识别并挑战求助者非理性想法的过程。", hint: "‘换个思路看问题’。改变负面逻辑。" },
+                { term: "Fear hierarchies", cn: "恐惧等级", en_def: "A list of situations that evoke anxiety, ordered from least to most stressful.", cn_def: "将恐惧的情况按严重程度从低到高排列的清单。", hint: "系统脱敏法的一步：‘从怕看蜘蛛图片开始到摸蜘蛛’。" },
+                { term: "Cognitive triad (Beck)", cn: "认知三联征", en_def: "The negative view of self, world, and future.", cn_def: "贝克发现的抑郁症核心负面视角：对自己、世界和未来的悲观。" },
+                { term: "Applied behavior analysis (ABA)", cn: "应用行为分析", en_def: "Use of specific techniques based on learning principles to change behavior.", cn_def: "基于学习原理（如强化）来改变行为的技术，常用于孤独症治疗。", hint: "重点在‘行为改变’。" },
+                { term: "Exposure therapies", cn: "暴露疗法", en_def: "Treating anxieties by exposing people to the things they fear.", cn_def: "让求助者直面恐惧对象的疗法。", hint: "‘以毒攻毒’。包含系统脱敏和洪水法。" },
+                { term: "Systematic desensitization", cn: "系统脱敏法", en_def: "Type of exposure therapy that associates a pleasant relaxed state with gradually increasing anxiety-triggering stimuli.", cn_def: "在放松状态下，逐步接触恐惧等级中的对象的方法。", hint: "‘温水煮青蛙’式战胜恐惧。" },
+                { term: "Aversion therapy", cn: "厌恶疗法", en_def: "Associating an unpleasant state with an unwanted behavior.", cn_def: "将痛苦体验与想要戒掉的行为（如酗酒）联系起来的方法。", hint: "‘喝酒就想吐’。" },
+                { term: "Token economy", cn: "代币制", en_def: "Operant conditioning procedure rewarding desired behavior with a token.", cn_def: "对良好行为予以代币奖励，代币可兑换实物。", hint: "‘攒小红花’。常用于机构中。" },
+                { term: "Biofeedback", cn: "生物反馈", en_def: "Using electronic monitoring of a normal body function to train someone to acquire voluntary control of that function.", cn_def: "利用电子设备显示身体指标（如心率），训练个体自主控制这些指标。", hint: "‘用意念控制心跳’。" },
+                { term: "Dialectical behavior therapy (DBT)", cn: "辩证行为疗法", en_def: "Form of therapy, especially for BPD, mixing cognitive, behavioral, and mindfulness.", cn_def: "为边缘型人格障碍设计的，结合了认知行为和正念的疗法。", hint: "强调‘接纳’与‘改变’的平衡。" },
+                { term: "Rational-emotive behavior therapy (REBT)", cn: "合理情绪行为疗法 (ABC模型)", en_def: "Confrontational cognitive therapy that vigorously challenges irrational beliefs.", cn_def: "埃利斯提出，通过猛烈挑战非理性信念来改变情绪。", hint: "‘怼’你的错误想法。" },
+                { term: "Humanistic therapy", cn: "人本主义疗法", en_def: "Focuses on removing obstacles to self-actualization.", cn_def: "关注消除自我实现的障碍。", hint: "‘非指令式’治疗。" },
+                { term: "Person-centered therapy", cn: "个人中心疗法", en_def: "Rogers' therapy featuring active listening and unconditional positive regard.", cn_def: "罗杰斯的疗法。强调同理心和无条件的爱。", hint: "让求助者在被接纳的环境中自愈。" },
+                { term: "Active listening", cn: "积极倾听", en_def: "Empathic listening where listener echoes, restates, clarifies.", cn_def: "带有共情地重复、重述和澄清对方的话，以示理解。", hint: "‘像镜子一样反射’。" },
+                { term: "Unconditional positive regard (Unit 5)", cn: "无条件积极关注", en_def: "Showing non-judgmental acceptance.", cn_def: "全然接纳求助者的现状。", hint: "人本主义的核心。" },
+                { term: "Hypnosis in therapy", cn: "催眠治疗", en_def: "Technique involving suggestions during a state of focus.", cn_def: "在高度专注状态下使用暗示来帮助个体。", hint: "虽然有争议，但可用于戒瘾或止痛。" },
+                { term: "Antidepressants", cn: "抗抑郁药", en_def: "Drugs used to treat depression (e.g., SSRIs).", cn_def: "用于治疗抑郁症的药物，如百忧解。", hint: "调高血清素水平。" },
+                { term: "Antianxiety", cn: "抗焦虑药", en_def: "Drugs used to control anxiety and agitation (e.g., Xanax).", cn_def: "用于控制焦虑和不安的药物，如阿普唑仑。", hint: "抑制中枢神经活动。" },
+                { term: "Lithium", cn: "锂盐", en_def: "Mood stabilizer used for bipolar disorder.", cn_def: "用于双相障碍（躁郁症）的情绪稳定剂。", hint: "‘情绪平滑剂’。能有效预防狂躁和抑郁。" },
+                { term: "Antipsychotics", cn: "抗精神病药", en_def: "Drugs used to treat schizophrenia and other severe thought disorders.", cn_def: "用于治疗精神分裂症幻觉、妄想等症状的药物。", hint: "调低多巴胺水平。" },
+                { term: "Tardive dyskinesia", cn: "迟发性运动障碍", en_def: "Involuntary movements of facial muscles, a side effect of long-term use of antipsychotic drugs.", cn_def: "长期服用抗精神病药导致的脸部肌肉不自主抽动。", hint: "抗精神病药的严重副作用。" },
+                { term: "Lesioning (Therapy)", cn: "脑毁损", en_def: "Removal or destruction of brain tissue to treat mental disorders.", cn_def: "通过破坏特定脑组织来治疗严重心理障碍。", hint: "极其少见的极端手段。" },
+                { term: "Lobotomy", cn: "前脑叶切断术", en_def: "A now-rare psychosurgical procedure once used to calm uncontrollably emotional patients.", cn_def: "切断前额叶与情绪中心联系的历史性手段。", hint: "‘僵尸手术’。现已被弃用，因为会把人变成行尸走肉。" },
+                { term: "Transcranial magnetic stimulation (TMS)", cn: "经颅磁刺激", en_def: "Use of magnetic pulses to stimulate brain activity.", cn_def: "利用磁脉冲刺激大脑特定区域，用于治疗难治性抑郁。", hint: "非侵入性的、比电击更温和的物理手段。" },
+                { term: "Electroconvulsive therapy (ECT)", cn: "电抽搐疗法", en_def: "Brief electric current is sent through the brain of an anesthetized patient.", cn_def: "在全麻状态下通过微弱电流诱发大脑抽搐。", hint: "‘电击疗法’。对自杀倾向极强的重度抑郁症非常有效。" }
+            ]
+        };
+
+        function App() {
+            const [selectedUnit, setSelectedUnit] = useState("Unit 0: Science Practices");
+            const [cards, setCards] = useState(RAW_DATA["Unit 0: Science Practices"]);
+            const [currentIndex, setCurrentIndex] = useState(0);
+            const [isRevealed, setIsRevealed] = useState(false);
+            const [isHintRevealed, setIsHintRevealed] = useState(false);
+            const [isShuffle, setIsShuffle] = useState(false);
+            const [knownCards, setKnownCards] = useState(new Set());
+            const [view, setView] = useState('practice');
+            const [inputValue, setInputValue] = useState('');
+            const [timerTime, setTimerTime] = useState(0);
+            const [isTimerRunning, setIsTimerRunning] = useState(false);
+            const [showSuccess, setShowSuccess] = useState(false);
+            
+            const timerRef = useRef(null);
+            
+            useEffect(() => {
+                setCards(RAW_DATA[selectedUnit] || []);
+                setCurrentIndex(0);
+                setIsRevealed(false);
+                setIsHintRevealed(false);
+            }, [selectedUnit]);
+
+            useEffect(() => { lucide.createIcons(); }, [view, isRevealed, currentIndex, knownCards.size, isHintRevealed, selectedUnit, showSuccess]);
+            useEffect(() => { if (isTimerRunning) timerRef.current = setInterval(() => setTimerTime(v => v + 1), 1000); else clearInterval(timerRef.current); return () => clearInterval(timerRef.current); }, [isTimerRunning]);
+
+            const currentCard = cards[currentIndex] || { term: "End of Unit", cn: "本单元结束", en_def: "", cn_def: "", hint: "" };
+            const progress = ((currentIndex + 1) / cards.length) * 100;
+
+            const handleNext = () => { if (currentIndex < cards.length - 1) { setCurrentIndex(v => v + 1); setIsRevealed(false); setIsHintRevealed(false); } };
+            const handlePrev = () => { if (currentIndex > 0) { setCurrentIndex(v => v - 1); setIsRevealed(false); setIsHintRevealed(false); } };
+            const toggleShuffle = () => { setIsShuffle(!isShuffle); setCards(prev => !isShuffle ? [...prev].sort(() => Math.random() - 0.5) : RAW_DATA[selectedUnit]); setCurrentIndex(0); };
+            const toggleKnown = () => { 
+                const n = new Set(knownCards); 
+                const key = `${selectedUnit}-${currentIndex}`; 
+                if (!n.has(key)) {
+                    n.add(key); 
+                    setKnownCards(n);
+                    setShowSuccess(true);
+                    setTimeout(() => {
+                        setShowSuccess(false);
+                        handleNext();
+                    }, 600);
+                } else {
+                    n.delete(key);
+                    setKnownCards(n);
+                }
+            };
+
+            return (
+                <div id="main-container" className="min-h-screen p-4 md:p-8 flex flex-col">
+                    <div className="max-w-[1200px] w-full mx-auto grid grid-cols-1 lg:grid-cols-[280px_1fr_280px] lg:grid-rows-[80px_1fr_100px] gap-6 flex-1">
+                        
+                        {/* --- Header --- */}
+                        <header className="lg:col-span-3 bento-item flex-row justify-between h-20 items-center px-8 border-b-4 border-indigo-100">
+                             <div className="flex items-center gap-4">
+                                <div className="h-10 w-10 bg-indigo-600 rounded-full flex items-center justify-center text-white font-black">AP</div>
+                                <div><h1 className="text-xl font-black text-gray-900 leading-none">Vocab Master</h1><p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mt-1">Classroom Edition</p></div>
+                             </div>
+                             
+                             <div className="flex items-center gap-6">
+                                <select 
+                                    className="px-4 py-2 bg-gray-50 border-2 border-gray-100 rounded-xl text-sm font-bold shadow-sm outline-none cursor-pointer hover:border-indigo-300 transition-colors"
+                                    value={selectedUnit}
+                                    onChange={(e) => setSelectedUnit(e.target.value)}
+                                >
+                                    {Object.keys(RAW_DATA).map(unit => <option key={unit} value={unit}>{unit}</option>)}
+                                </select>
+                                <div className="bg-black text-[#10B981] px-4 py-2 rounded-full font-mono text-xl font-bold shadow-inner border border-gray-800">
+                                    {Math.floor(timerTime/60).toString().padStart(2,'0')}:{(timerTime%60).toString().padStart(2,'0')}
+                                </div>
+                                <button onClick={() => setView(view === 'practice' ? 'teacher' : 'practice')} className="p-2 text-gray-400 hover:text-indigo-600 transition-colors"><i data-lucide={view === 'practice' ? 'settings' : 'book-open'}></i></button>
+                             </div>
+                        </header>
+
+                        {view === 'practice' ? (
+                            <React.Fragment>
+                                {/* --- Left: Progress --- */}
+                                <aside className="space-y-4">
+                                    <div className="bento-item p-6 text-center group active:scale-95">
+                                        <div className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-2">Unit Progress</div>
+                                        <div className="text-4xl font-black text-gray-900">{currentIndex + 1} / {cards.length}</div>
+                                        <div className="w-full bg-gray-100 h-2 rounded-full mt-4 overflow-hidden"><div className="h-full bg-indigo-600 transition-all duration-500" style={{width: `${progress}%`}}></div></div>
+                                    </div>
+                                    <div className="bento-item p-6 text-center">
+                                        <div className="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-1">Knowledge Metre</div>
+                                        <div className="text-3xl font-black text-gray-900">{Math.round((Array.from(knownCards).filter(k => k.startsWith(selectedUnit)).length / (cards.length || 1)) * 100)}%</div>
+                                    </div>
+                                    <button 
+                                        onClick={() => setIsTimerRunning(!isTimerRunning)} 
+                                        className={`w-full bento-item py-4 font-black uppercase text-xs tracking-widest transition-all ${isTimerRunning ? 'bg-red-50 text-red-600 border-2 border-red-100' : 'bg-emerald-50 text-emerald-600 border-2 border-emerald-100'}`}
+                                    >
+                                        {isTimerRunning ? 'Pause Session' : 'Resume Session'}
+                                    </button>
+                                </aside>
+
+                                {/* --- Main: Flashcard --- */}
+                                <main 
+                                    className="bento-item p-12 text-center cursor-pointer relative overflow-hidden flex items-center justify-center min-h-[400px] border-4 border-transparent hover:border-indigo-100 active:scale-[0.99]"
+                                    onClick={() => { if(!showSuccess) setIsRevealed(!isRevealed); }}
+                                >
+                                    {/* Success Overlay */}
+                                    <AnimatePresence>
+                                        {showSuccess && (
+                                            <motion.div 
+                                                initial={{ opacity: 0 }}
+                                                animate={{ opacity: 1 }}
+                                                exit={{ opacity: 0 }}
+                                                className="absolute inset-0 bg-emerald-500/20 backdrop-blur-[2px] flex items-center justify-center z-20"
+                                            >
+                                                <motion.div
+                                                    initial={{ scale: 0.5, opacity: 0 }}
+                                                    animate={{ scale: 1, opacity: 1 }}
+                                                    exit={{ scale: 1.5, opacity: 0 }}
+                                                    className="bg-white rounded-full p-4 shadow-xl"
+                                                >
+                                                    <i data-lucide="check-circle-2" className="h-16 w-16 text-emerald-500"></i>
+                                                </motion.div>
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
+
+                                    <AnimatePresence mode="wait">
+                                        {!isRevealed ? (
+                                            <motion.div 
+                                                key="term"
+                                                initial={{ opacity: 0, y: 15 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                exit={{ opacity: 0, y: -15 }}
+                                                transition={{ duration: 0.25 }}
+                                                className="flex flex-col items-center"
+                                            >
+                                                <span className="text-[10px] font-black text-indigo-300 uppercase tracking-widest mb-4 block">Term Display</span>
+                                                <h2 className="text-6xl font-black text-gray-900 tracking-tight leading-tight">{currentCard.term}</h2>
+                                            </motion.div>
+                                        ) : (
+                                            <motion.div 
+                                                key="def"
+                                                initial={{ opacity: 0, y: 15 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                exit={{ opacity: 0, y: -15 }}
+                                                transition={{ duration: 0.25 }}
+                                                className="w-full max-w-[80%] flex flex-col items-center"
+                                            >
+                                                <h3 className="text-4xl font-black text-indigo-600 mb-6">{currentCard.cn}</h3>
+                                                <div className="pt-8 border-t-4 border-gray-50 space-y-6 w-full">
+                                                    <p className="text-xl font-semibold text-gray-700 leading-relaxed">{currentCard.en_def}</p>
+                                                    <p className="text-lg text-gray-400 italic font-medium">{currentCard.cn_def}</p>
+                                                </div>
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
+                                    <div className="absolute bottom-6 left-6 text-[10px] font-black text-gray-300 uppercase">Click or Space to Reveal</div>
+                                </main>
+
+                                {/* --- Right: Hint --- */}
+                                <aside className="flex flex-col gap-4">
+                                    <div className="bento-item flex-1 p-6 flex flex-col text-center">
+                                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-6 border-b pb-2">Teacher's Hint</span>
+                                        <div className="flex-1 flex flex-col items-center justify-center p-4 bg-indigo-50/50 rounded-3xl border-2 border-dashed border-indigo-100">
+                                            <AnimatePresence mode="wait">
+                                                {isHintRevealed ? (
+                                                    <motion.div 
+                                                        key="hint"
+                                                        initial={{ opacity: 0, scale: 0.95 }}
+                                                        animate={{ opacity: 1, scale: 1 }}
+                                                        exit={{ opacity: 0, scale: 0.95 }}
+                                                        className="font-bold text-indigo-900 leading-relaxed text-lg italic"
+                                                    >
+                                                        "{currentCard.hint}"
+                                                    </motion.div>
+                                                ) : (
+                                                    <motion.button 
+                                                        key="hint-btn"
+                                                        initial={{ opacity: 0 }}
+                                                        animate={{ opacity: 1 }}
+                                                        exit={{ opacity: 0 }}
+                                                        onClick={(e) => {e.stopPropagation(); setIsHintRevealed(true);}}
+                                                        className="group flex flex-col items-center gap-4 text-indigo-300"
+                                                    >
+                                                        <div className="h-16 w-16 rounded-full bg-white shadow-sm flex items-center justify-center group-hover:scale-110 group-hover:text-indigo-600 transition-all"><i data-lucide="help-circle" className="h-8 w-8"></i></div>
+                                                        <span className="text-xs font-black uppercase tracking-widest">Show Clue</span>
+                                                    </motion.button>
+                                                )}
+                                            </AnimatePresence>
+                                        </div>
+                                    </div>
+                                    <button 
+                                        onClick={(e) => {e.stopPropagation(); if(!showSuccess) toggleKnown();}}
+                                        disabled={showSuccess}
+                                        className={`bento-item py-4 font-black transition-all uppercase text-xs tracking-widest border-2 ${showSuccess || knownCards.has(`${selectedUnit}-${currentIndex}`) ? 'bg-emerald-600 text-white border-emerald-400' : 'bg-gray-50 text-gray-400 border-gray-100 hover:text-gray-900'}`}
+                                    >
+                                        {showSuccess || knownCards.has(`${selectedUnit}-${currentIndex}`) ? 'Added to Knowledge' : 'Got it?'}
+                                    </button>
+                                </aside>
+
+                                {/* --- Footer --- */}
+                                <footer className="lg:col-span-3 bento-item flex-row h-24 items-center px-8 bg-gray-900 text-white justify-between">
+                                     <button onClick={handlePrev} disabled={currentIndex === 0} className="flex items-center gap-3 px-8 py-3 rounded-2xl font-black uppercase text-xs tracking-widest active:scale-95 disabled:opacity-20 transition-all"><i data-lucide="arrow-left"></i> Previous</button>
+                                     <div className="flex items-center gap-4">
+                                        <button onClick={toggleShuffle} className={`h-12 w-12 rounded-full flex items-center justify-center transition-all ${isShuffle ? 'bg-indigo-600' : 'bg-gray-800 hover:bg-gray-700'}`}><i data-lucide="shuffle" className="h-4 w-4"></i></button>
+                                        <span className="text-[10px] text-gray-500 font-bold uppercase tracking-widest px-4 border-l border-r border-gray-800">Space for Reveal</span>
+                                     </div>
+                                     <button onClick={handleNext} disabled={currentIndex === cards.length - 1} className="flex items-center gap-3 bg-indigo-600 px-10 py-3 rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl shadow-indigo-900/40 hover:-translate-y-1 active:translate-y-0 disabled:opacity-20 transition-all">Next Card <i data-lucide="arrow-right"></i></button>
+                                </footer>
+                            </React.Fragment>
+                        ) : (
+                            <main className="lg:col-span-3 bento-item p-12 space-y-8 min-h-[500px]">
+                                <h1 className="text-4xl font-black">Content Management</h1>
+                                <p className="text-gray-400">Paste your custom vocab list below. Format: <code className="bg-gray-100 px-2 py-1 rounded">term | cn | en_def | cn_def | hint</code></p>
+                                <textarea className="w-full flex-1 p-8 bg-gray-50 border-2 rounded-[32px] font-mono text-sm outline-none focus:border-indigo-500 shadow-inner" placeholder="Enter terms here..." value={inputValue} onChange={(e) => setInputValue(e.target.value)}></textarea>
+                                <div className="flex gap-4"><button onClick={() => { const lines = inputValue.split('\n').filter(l => l.trim().includes('|')); const n = lines.map(l => { const p = l.split('|').map(s=>s.trim()); return {term:p[0], cn:p[1], en_def:p[2], cn_def:p[3], hint:p[4]}; }); if (n.length) { RAW_DATA["Custom Deck"] = n; setSelectedUnit("Custom Deck"); setView('practice'); } }} className="flex-1 py-5 bg-indigo-600 text-white rounded-3xl font-black uppercase tracking-widest shadow-lg shadow-indigo-200">Engage Custom List</button><button onClick={() => setView('practice')} className="px-12 py-5 bg-gray-100 rounded-3xl font-black uppercase tracking-widest text-gray-400">Cancel</button></div>
+                            </main>
+                        )}
+                    </div>
+                </div>
+            );
+        }
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+        window.addEventListener('keydown', (e) => { if (e.code === 'Space') { e.preventDefault(); document.querySelector('main')?.click(); } if (e.code === 'ArrowRight') document.querySelector('footer button:last-child')?.click(); if (e.code === 'ArrowLeft') document.querySelector('footer button:first-child')?.click(); });
+    </script>
+</body>
+</html>
