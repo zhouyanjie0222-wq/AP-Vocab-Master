@@ -188,15 +188,6 @@ export default function App() {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const IndigoBtn = ({ children, onClick, active }: any) => (
-    <button 
-      onClick={onClick}
-      className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${active ? 'bg-[#4F46E5] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
-    >
-      {children}
-    </button>
-  );
-
   return (
     <div 
       ref={containerRef}
@@ -240,7 +231,7 @@ export default function App() {
         {view === 'practice' ? (
           <>
             {/* --- LEFT PANEL (Stats) --- */}
-            <aside className="space-y-6">
+            <aside key="sidebar-left" className="space-y-6">
               <div className="bg-white p-6 rounded-[24px] shadow-md border border-gray-100 space-y-6 flex flex-col h-full">
                 <div className="space-y-4">
                   <div className="bg-[#F9FAFB] border border-[#E5E7EB] rounded-2xl p-6 text-center">
@@ -279,7 +270,7 @@ export default function App() {
             </aside>
 
             {/* --- CENTRAL CARD --- */}
-            <main className="relative flex flex-col">
+            <main key="card-main" className="relative flex flex-col">
               <div 
                 className="flex-1 bg-white rounded-[32px] shadow-xl border-2 border-gray-100 flex flex-col items-center justify-center text-center p-12 overflow-hidden cursor-pointer"
                 onClick={() => setIsRevealed(!isRevealed)}
@@ -287,7 +278,7 @@ export default function App() {
                 <AnimatePresence mode="wait">
                   {!isRevealed ? (
                     <motion.div 
-                      key="front"
+                      key={`front-${currentIndex}`}
                       initial={{ opacity: 0, scale: 0.9 }}
                       animate={{ opacity: 1, scale: 1 }}
                       exit={{ opacity: 0, scale: 1.1 }}
@@ -303,7 +294,7 @@ export default function App() {
                     </motion.div>
                   ) : (
                     <motion.div 
-                      key="back"
+                      key={`back-${currentIndex}`}
                       initial={{ opacity: 0, scale: 1.1 }}
                       animate={{ opacity: 1, scale: 1 }}
                       exit={{ opacity: 0, scale: 0.9 }}
@@ -337,7 +328,7 @@ export default function App() {
             </main>
 
             {/* --- RIGHT PANEL (Hints) --- */}
-            <aside className="space-y-6 flex flex-col h-full">
+            <aside key="sidebar-right" className="space-y-6 flex flex-col h-full">
               <div className="bg-white p-6 rounded-[24px] shadow-md border border-gray-100 space-y-6 flex-1 flex flex-col">
                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
                   <HelpCircle size={14} className="text-[#4F46E5]" /> Contextual Hint
@@ -346,6 +337,7 @@ export default function App() {
                 <div className="flex-1 bg-[#EEF2FF] border border-[#C7D2FE] p-6 rounded-[20px] text-[#4338CA] leading-relaxed relative overflow-hidden flex flex-col items-center justify-center">
                    {isHintRevealed ? (
                      <motion.div 
+                       key="hint-text"
                        initial={{ opacity: 0, y: 10 }}
                        animate={{ opacity: 1, y: 0 }}
                        className="relative z-10 font-medium italic text-center"
@@ -354,6 +346,7 @@ export default function App() {
                      </motion.div>
                    ) : (
                      <button 
+                       key="hint-placeholder"
                        onClick={() => setIsHintRevealed(true)}
                        className="group flex flex-col items-center gap-3 text-[#4F46E5]/60 hover:text-[#4F46E5] transition-all"
                      >
@@ -381,7 +374,7 @@ export default function App() {
             </aside>
 
             {/* --- FOOTER NAV (Row 3, Full Width) --- */}
-            <footer className="lg:col-span-3 bg-white p-6 rounded-[24px] shadow-md border border-gray-100 flex items-center justify-between">
+            <footer key="footer-nav" className="lg:col-span-3 bg-white p-6 rounded-[24px] shadow-md border border-gray-100 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <button 
                   onClick={handlePrev} 
@@ -394,7 +387,7 @@ export default function App() {
                   onClick={toggleShuffle}
                   className={`px-6 py-3.5 font-bold rounded-xl transition-all flex items-center gap-2 ${isShuffle ? 'bg-[#111827] text-white' : 'bg-[#E5E7EB] text-[#374151] hover:bg-gray-300'}`}
                 >
-                  <Shuffle size={18} /> Shuffle
+                  <Shuffle size={18} /> Shuffle {isShuffle ? 'ON' : 'OFF'}
                 </button>
               </div>
 

@@ -933,8 +933,9 @@
                                 >
                                     {/* Success Overlay */}
                                     <AnimatePresence>
-                                        {showSuccess && (
+                                        {showSuccess ? (
                                             <motion.div 
+                                                key="success-overlay"
                                                 initial={{ opacity: 0 }}
                                                 animate={{ opacity: 1 }}
                                                 exit={{ opacity: 0 }}
@@ -949,13 +950,13 @@
                                                     <CheckIcon />
                                                 </motion.div>
                                             </motion.div>
-                                        )}
+                                        ) : null}
                                     </AnimatePresence>
 
                                     <AnimatePresence mode="wait">
                                         {!isRevealed ? (
                                             <motion.div 
-                                                key="term"
+                                                key={`term-${currentIndex}`}
                                                 initial={{ opacity: 0, y: 15 }}
                                                 animate={{ opacity: 1, y: 0 }}
                                                 exit={{ opacity: 0, y: -15 }}
@@ -967,7 +968,7 @@
                                             </motion.div>
                                         ) : (
                                             <motion.div 
-                                                key="def"
+                                                key={`def-${currentIndex}`}
                                                 initial={{ opacity: 0, y: 15 }}
                                                 animate={{ opacity: 1, y: 0 }}
                                                 exit={{ opacity: 0, y: -15 }}
@@ -993,7 +994,7 @@
                                             <AnimatePresence mode="wait">
                                                 {isHintRevealed ? (
                                                     <motion.div 
-                                                        key="hint"
+                                                        key={`hint-${currentIndex}`}
                                                         initial={{ opacity: 0, scale: 0.95 }}
                                                         animate={{ opacity: 1, scale: 1 }}
                                                         exit={{ opacity: 0, scale: 0.95 }}
@@ -1003,7 +1004,7 @@
                                                     </motion.div>
                                                 ) : (
                                                     <motion.button 
-                                                        key="hint-btn"
+                                                        key={`hint-btn-${currentIndex}`}
                                                         initial={{ opacity: 0 }}
                                                         animate={{ opacity: 1 }}
                                                         exit={{ opacity: 0 }}
@@ -1032,7 +1033,10 @@
                                 <footer className="lg:col-span-3 bento-item flex-row h-24 items-center px-8 bg-gray-900 text-white justify-between">
                                      <button onClick={handlePrev} disabled={currentIndex === 0} className="flex items-center gap-3 px-8 py-3 rounded-2xl font-black uppercase text-xs tracking-widest active:scale-95 disabled:opacity-20 transition-all"><ArrowLeftIcon /> Previous</button>
                                      <div className="flex items-center gap-4">
-                                        <button onClick={toggleShuffle} className={`h-12 w-12 rounded-full flex items-center justify-center transition-all ${isShuffle ? 'bg-indigo-600' : 'bg-gray-800 hover:bg-gray-700'}`}><ShuffleIcon /></button>
+                                        <button onClick={toggleShuffle} className={`px-6 py-3 rounded-2xl flex items-center gap-3 font-black uppercase text-xs tracking-widest transition-all ${isShuffle ? 'bg-indigo-600' : 'bg-gray-800 hover:bg-gray-700 text-gray-300'}`}>
+                                            <ShuffleIcon />
+                                            <span>Shuffle: {isShuffle ? 'ON' : 'OFF'}</span>
+                                        </button>
                                         <span className="text-[10px] text-gray-500 font-bold uppercase tracking-widest px-4 border-l border-r border-gray-800">Space for Reveal</span>
                                      </div>
                                      <button onClick={handleNext} disabled={currentIndex === cards.length - 1} className="flex items-center gap-3 bg-indigo-600 px-10 py-3 rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl shadow-indigo-900/40 hover:-translate-y-1 active:translate-y-0 disabled:opacity-20 transition-all">Next Card <ArrowRightIcon /></button>
