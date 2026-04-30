@@ -218,19 +218,12 @@ export default function App() {
               >
                 {isFullscreen ? <Minimize size={20} /> : <Maximize size={20} />}
               </button>
-              <button 
-                onClick={() => setView(view === 'practice' ? 'teacher' : 'practice')}
-                className="px-5 py-2.5 bg-white border-2 border-gray-100 text-gray-600 font-bold rounded-xl hover:bg-gray-50 hover:border-gray-200 transition-all text-sm"
-              >
-                {view === 'practice' ? 'Teacher Input' : 'Back to Cards'}
-              </button>
             </div>
           </div>
         </header>
 
-        {view === 'practice' ? (
-          <>
-            {/* --- LEFT PANEL (Stats) --- */}
+        <>
+          {/* --- LEFT PANEL (Stats) --- */}
             <aside key="sidebar-left" className="space-y-6">
               <div className="bg-white p-6 rounded-[24px] shadow-md border border-gray-100 space-y-6 flex flex-col h-full">
                 <div className="space-y-4">
@@ -275,7 +268,7 @@ export default function App() {
                 className="flex-1 bg-white rounded-[32px] shadow-xl border-2 border-gray-100 flex flex-col items-center justify-center text-center p-12 overflow-hidden cursor-pointer"
                 onClick={() => setIsRevealed(!isRevealed)}
               >
-                <AnimatePresence mode="wait">
+                <AnimatePresence key="flashcard-presence" mode="wait">
                   {!isRevealed ? (
                     <motion.div 
                       key={`front-${currentIndex}`}
@@ -335,7 +328,8 @@ export default function App() {
                 </p>
                 
                 <div className="flex-1 bg-[#EEF2FF] border border-[#C7D2FE] p-6 rounded-[20px] text-[#4338CA] leading-relaxed relative overflow-hidden flex flex-col items-center justify-center">
-                   {isHintRevealed ? (
+                   <AnimatePresence key="hint-presence" mode="wait">
+                     {isHintRevealed ? (
                      <motion.div 
                        key="hint-text"
                        initial={{ opacity: 0, y: 10 }}
@@ -354,6 +348,7 @@ export default function App() {
                        <span className="text-xs font-bold uppercase tracking-widest">点击查看提示</span>
                      </button>
                    )}
+                   </AnimatePresence>
                 </div>
 
                 <div className="pt-6 flex flex-col gap-3 mt-auto">
@@ -404,50 +399,6 @@ export default function App() {
               </button>
             </footer>
           </>
-        ) : (
-          /* --- TEACHER VIEW (Spans entire main area) --- */
-          <main className="lg:col-span-3">
-             <div className="bg-white p-12 rounded-[32px] shadow-xl border border-gray-100 space-y-10 animate-fade-in-up">
-                <div className="flex items-center justify-between">
-                   <div className="space-y-2">
-                      <h2 className="text-4xl font-black text-gray-900 tracking-tight">Teacher Portal</h2>
-                      <p className="text-gray-500 font-medium">Batch update your classroom vocabulary deck.</p>
-                   </div>
-                   <Trophy size={48} className="text-orange-500 opacity-20" />
-                </div>
-                
-                <div className="space-y-4">
-                   <div className="bg-gray-50 border border-gray-100 p-6 rounded-2xl">
-                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Copy-Paste Format</p>
-                      <div className="bg-white px-4 py-3 rounded-lg border border-gray-200 text-xs font-mono text-[#4F46E5]">
-                        term | Chinese | English definition | Chinese definition | hint
-                      </div>
-                   </div>
-                   <textarea 
-                     className="w-full min-h-[350px] p-8 bg-gray-50 rounded-[28px] border-2 border-gray-200 focus:border-[#4F46E5] focus:ring-0 transition-all font-mono text-sm leading-relaxed outline-none"
-                     placeholder="Example:\nCognitive Dissonance | 认知失调 | Mental discomfort caused by conflicting beliefs | 当个体持有矛盾认知时产生的不适感 | Scenario: Beliefs vs Smoking..."
-                     value={inputValue}
-                     onChange={(e) => setInputValue(e.target.value)}
-                   />
-                </div>
-
-                <div className="flex gap-4">
-                   <button 
-                      onClick={parseTeacherInput}
-                      className="flex-1 bg-[#4F46E5] text-white py-5 rounded-[20px] font-bold hover:shadow-2xl hover:shadow-[#4F46E5]/30 transition-all active:scale-[0.98] flex items-center justify-center gap-3 text-lg"
-                   >
-                     Update Classroom Deck
-                   </button>
-                   <button 
-                      onClick={() => setView('practice')}
-                      className="px-10 py-5 bg-gray-100 text-gray-600 rounded-[20px] font-bold hover:bg-gray-200 transition-all"
-                   >
-                     Discard Changes
-                   </button>
-                </div>
-             </div>
-          </main>
-        )}
       </div>
 
       {/* Keyboard Shortcuts Overlay (Optional visual polish) */}
