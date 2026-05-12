@@ -928,8 +928,8 @@
                                     onClick={() => { if(!showSuccess) setIsRevealed(!isRevealed); }}
                                 >
                                     {/* Success Overlay */}
-                                    <AnimatePresence>
-                                        {showSuccess && (
+                                    <AnimatePresence key="success-presence">
+                                        {showSuccess ? (
                                             <motion.div 
                                                 key="success-overlay"
                                                 initial={{ opacity: 0 }}
@@ -947,10 +947,10 @@
                                                     <CheckIcon />
                                                 </motion.div>
                                             </motion.div>
-                                        )}
+                                        ) : null}
                                     </AnimatePresence>
 
-                                    <AnimatePresence mode="wait">
+                                    <AnimatePresence key="flashcard-presence" mode="wait">
                                         {!isRevealed ? (
                                             <motion.div 
                                                 key={`term-${currentIndex}`}
@@ -988,7 +988,7 @@
                                     <div className="bento-item flex-1 p-6 flex flex-col text-center">
                                         <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-6 border-b pb-2">Teacher's Hint</span>
                                         <div className="flex-1 flex flex-col items-center justify-center p-4 bg-indigo-50/50 rounded-3xl border-2 border-dashed border-indigo-100">
-                                            <AnimatePresence mode="wait">
+                                            <AnimatePresence key="hint-presence" mode="wait">
                                                 {isHintRevealed ? (
                                                     <motion.div 
                                                         key={`hint-${currentIndex}`}

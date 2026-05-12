@@ -100,6 +100,31 @@ export default function App() {
   }, [currentIndex, isAutoReveal, isRevealed]);
 
   useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'TEXTAREA') return;
+      
+      if (e.code === 'Space') {
+        e.preventDefault();
+        setIsRevealed(r => !r);
+      } else if (e.code === 'ArrowRight') {
+        if (currentIndex < cards.length - 1) {
+          setCurrentIndex(c => c + 1);
+          setIsRevealed(false);
+          setIsHintRevealed(false);
+        }
+      } else if (e.code === 'ArrowLeft') {
+        if (currentIndex > 0) {
+          setCurrentIndex(c => c - 1);
+          setIsRevealed(false);
+          setIsHintRevealed(false);
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [currentIndex, cards.length]);
+
+  useEffect(() => {
     if (isTimerRunning) {
       timerRef.current = window.setInterval(() => {
         setTimerTime(prev => prev + 1);
@@ -327,28 +352,26 @@ export default function App() {
                   <HelpCircle size={14} className="text-[#4F46E5]" /> Contextual Hint
                 </p>
                 
-                <div className="flex-1 bg-[#EEF2FF] border border-[#C7D2FE] p-6 rounded-[20px] text-[#4338CA] leading-relaxed relative overflow-hidden flex flex-col items-center justify-center">
-                   <AnimatePresence key="hint-presence" mode="wait">
+                <div 
+                  className={`flex-1 bg-[#EEF2FF] border border-[#C7D2FE] p-6 rounded-[20px] text-[#4338CA] leading-relaxed relative overflow-hidden flex flex-col items-center justify-center ${!isHintRevealed ? 'cursor-pointer hover:bg-[#E0E7FF] transition-colors active:scale-[0.98]' : ''}`}
+                  onClick={() => !isHintRevealed && setIsHintRevealed(true)}
+                >
                      {isHintRevealed ? (
-                     <motion.div 
-                       key="hint-text"
-                       initial={{ opacity: 0, y: 10 }}
-                       animate={{ opacity: 1, y: 0 }}
-                       className="relative z-10 font-medium italic text-center"
+                     <div 
+                       key={`hint-text-${currentIndex}`}
+                       className="relative z-10 font-medium italic text-center animate-fade-in-up"
                      >
                       {currentCard.hint}
-                     </motion.div>
+                     </div>
                    ) : (
-                     <button 
-                       key="hint-placeholder"
-                       onClick={() => setIsHintRevealed(true)}
-                       className="group flex flex-col items-center gap-3 text-[#4F46E5]/60 hover:text-[#4F46E5] transition-all"
+                     <div 
+                       key={`hint-btn-${currentIndex}`}
+                       className="group flex flex-col items-center gap-3 text-[#4F46E5]/60"
                      >
-                       <HelpCircle size={40} className="group-hover:scale-110 transition-transform" />
+                       <HelpCircle size={40} className="group-hover:scale-110 transition-transform duration-300" />
                        <span className="text-xs font-bold uppercase tracking-widest">点击查看提示</span>
-                     </button>
+                     </div>
                    )}
-                   </AnimatePresence>
                 </div>
 
                 <div className="pt-6 flex flex-col gap-3 mt-auto">
