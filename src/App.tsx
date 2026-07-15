@@ -293,7 +293,7 @@ export default function App() {
                 className="flex-1 bg-white rounded-[32px] shadow-xl border-2 border-gray-100 flex flex-col items-center justify-center text-center p-12 overflow-hidden cursor-pointer"
                 onClick={() => setIsRevealed(!isRevealed)}
               >
-                <AnimatePresence key="flashcard-presence" mode="wait">
+                <AnimatePresence mode="wait">
                   {!isRevealed ? (
                     <motion.div 
                       key={`front-${currentIndex}`}
